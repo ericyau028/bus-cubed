@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>📋 巴士站列表 | 香港巴士便利站</title>
+  <meta name="description" content="香港巴士便利站 - 全港 6,742 個巴士站按地區分類，支援搜尋。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .item-list { overflow: hidden; transition: max-height 0.3s ease; }
+    .item-list.collapsed { max-height: 0 !important; }
+    .loading { text-align: center; padding: 40px 0; color: var(--gray-500); font-size: 0.95rem; }
+    .error { text-align: center; padding: 40px 0; color: #e74c3c; }
+  </style>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-132PFXDSM9"></script>
+  <script src="js/main.js" defer></script>
+  <script src="js/i18n.js" defer></script>
+  <script src="js/animations.js" defer></script>
+  <script src="js/search.js" defer></script>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="container">
+      <a href="#" data-lang="zh-Hant">繁體</a>
+      <a href="#" data-lang="zh-Hans">簡體</a>
+      <a href="#" data-lang="en">English</a>
+    </div>
+  </div>
+
+  <nav>
+    <div class="container">
+      <a href="index.html" class="nav-brand">🚌 香港<span>巴士站</span></a>
+      <button class="nav-toggle" aria-label="選單">☰</button>
+      <div class="nav-menu">
+        <a href="index.html"><span class="nav-icon">🏠</span> <span data-i18n="nav_home">首頁</span></a>
+        <a href="map.html"><span class="nav-icon">🗺️</span> <span data-i18n="nav_map">地圖</span></a>
+        <a href="list.html" class="active"><span class="nav-icon">📋</span> <span data-i18n="nav_list">列表</span></a>
+        <a href="routes.html"><span class="nav-icon">🚌</span> <span data-i18n="nav_routes">路線</span></a>
+        <a href="eta.html"><span class="nav-icon">⏱</span> <span data-i18n="nav_eta">到站</span></a>
+        <a href="fav.html"><span class="nav-icon">⭐</span> <span data-i18n="nav_bus_fav">常用</span></a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="page-header">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="index.html" data-i18n="breadcrumb_home">首頁</a> &gt; <span>📋 巴士站列表</span>
+      </div>
+      <h2>📋 香港巴士站列表</h2>
+      <p data-i18n="list_subtitle">全港 6,742 個巴士站按地區分類</p>
+      <a href="map.html" style="display:inline-block;background:#2563eb;color:#fff;padding:10px 20px;border-radius:8px;font-size:15px;text-decoration:none;margin-top:10px;" data-i18n="list_map_link">🗺️ 開啟互動地圖</a>
+    </div>
+  </section>
+
+  <main class="container">
+    <div class="ad-placeholder" style="padding:0;border:none;background:transparent;">
+      <div style="text-align:center;color:var(--gray-400);font-size:0.8rem;padding:12px;">📢 Ad Space · <span data-i18n="ad_placeholder">廣告招商 — 請聯繫我們</span></div>
+    </div>
+
+    <div id="search-container"></div>
+    <div class="district-jump-wrap" id="district-jump-wrap">
+      <select class="district-jump" id="district-jump">
+        <option value="">📍 跳到地區…</option>
+      </select>
+    </div>
+    <div id="list-container"><div class="loading">載入中...</div></div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p data-i18n="footer_copyright">© 2026 香港巴士便利站 | 資料僅供參考，實際情況以現場為準</p>
+      <p style="font-size:0.75rem;color:var(--gray-400);margin-top:4px;" data-i18n="source_bus">資料來源：運輸署 巴士到站時間預報系統</p>
+      <div class="footer-links">
+        <a href="index.html" data-i18n="footer_home">首頁</a>
+        <a href="map.html" data-i18n="footer_map">🗺️ 地圖</a>
+        <a href="routes.html" data-i18n="footer_routes">🚌 路線</a>
+        <a href="eta.html" data-i18n="footer_eta">⏱ 到站</a>
+        <a href="fav.html" data-i18n="footer_fav">⭐ 常用</a>
+      </div>
+    </div>
+  </footer>
+
+<script>
+(function() {
+  var DISTRICTS = {
+    '中環':'中環 Central','金鐘':'金鐘 Admiralty','銅鑼灣':'銅鑼灣 Causeway Bay',
+    '灣仔':'灣仔 Wan Chai','上環':'上環 Sheung Wan','西環':'西環 Sai Wan',
+    '堅尼地城':'堅尼地城 Kennedy Town','尖沙咀':'尖沙咀 Tsim Sha Tsui',
+    '旺角':'旺角 Mong Kok','佐敦':'佐敦 Jordan','油麻地':'油麻地 Yau Ma Tei',
+    '深水埗':'深水埗 Sham Shui Po','長沙灣':'長沙灣 Cheung Sha Wan',
+    '荔枝角':'荔枝角 Lai Chi Kok','九龍城':'九龍城 Kowloon City',
+    '黃大仙':'黃大仙 Wong Tai Sin','鑽石山':'鑽石山 Diamond Hill',
+    '彩虹':'彩虹 Choi Hung','觀塘':'觀塘 Kwun Tong','牛頭角':'牛頭角 Ngau Tau Kok',
+    '藍田':'藍田 Lam Tin','油塘':'油塘 Yau Tong','筲箕灣':'筲箕灣 Shau Kei Wan',
+    '柴灣':'柴灣 Chai Wan','杏花邨':'杏花邨 Heng Fa Chuen',
+    '北角':'北角 North Point','炮台山':'炮台山 Fortress Hill',
+    '天后':'天后 Tin Hau','大坑':'大坑 Tai Hang','跑馬地':'跑馬地 Happy Valley',
+    '半山':'半山 Mid-Levels','山頂':'山頂 The Peak','薄扶林':'薄扶林 Pok Fu Lam',
+    '香港仔':'香港仔 Aberdeen','黃竹坑':'黃竹坑 Wong Chuk Hang',
+    '鴨脷洲':'鴨脷洲 Ap Lei Chau','赤柱':'赤柱 Stanley','石澳':'石澳 Shek O',
+    '沙田':'沙田 Sha Tin','馬鞍山':'馬鞍山 Ma On Shan','大圍':'大圍 Tai Wai',
+    '火炭':'火炭 Fo Tan','大埔':'大埔 Tai Po','太和':'太和 Tai Wo',
+    '粉嶺':'粉嶺 Fanling','上水':'上水 Sheung Shui',
+    '元朗':'元朗 Yuen Long','天水圍':'天水圍 Tin Shui Wai','朗屏':'朗屏 Long Ping',
+    '錦田':'錦田 Kam Tin','屯門':'屯門 Tuen Mun','青山':'青山 Castle Peak',
+    '荃灣':'荃灣 Tsuen Wan','葵涌':'葵涌 Kwai Chung','青衣':'青衣 Tsing Yi',
+    '東涌':'東涌 Tung Chung','愉景灣':'愉景灣 Discovery Bay',
+    '迪士尼':'迪士尼 Disneyland','赤鱲角':'赤鱲角 Chek Lap Kok',
+    '機場':'機場 Airport','大嶼山':'大嶼山 Lantau Island',
+    '坪洲':'坪洲 Peng Chau','長洲':'長洲 Cheung Chau','南丫島':'南丫島 Lamma Island'
+  };
+  var DISTRICT_KEYS = Object.keys(DISTRICTS).sort(function(a,b){return b.length-a.length||a.localeCompare(b);});
+
+  function inferDistrict(stop) {
+    var s = ((stop.name_tc||'')+(stop.name_en||'')+(stop.id||'')).toLowerCase();
+    for (var i=0;i<DISTRICT_KEYS.length;i++) {
+      if (s.indexOf(DISTRICT_KEYS[i].toLowerCase())!==-1) return DISTRICTS[DISTRICT_KEYS[i]];
+    }
+    return '其他 Others';
+  }
+
+  function groupAndSort(data) {
+    var m={};
+    data.forEach(function(it){var d=it._district;if(!m[d])m[d]=[];m[d].push(it);});
+    var r=[];
+    Object.keys(m).sort().forEach(function(d){
+      m[d].sort(function(a,b){return(a.name_tc||'').localeCompare(b.name_tc||'');});
+      r.push({district:d,items:m[d]});
+    });
+    return r;
+  }
+
+  function esc(s){
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function render(grps) {
+    var c=document.getElementById('list-container');
+    var h='';
+    for(var i=0;i<grps.length;i++){
+      var g=grps[i];
+      h+='<section class="district-section"><h3 class="district-title"><span class="title-icon">📍</span> '+esc(g.district)+' ('+g.items.length+')</h3><div class="item-list collapsed">';
+      for(var j=0;j<g.items.length;j++){
+        var it=g.items[j];
+        h+='<div class="item-card"><h4>'+esc(it.name_tc||'')+'</h4>';
+        if(it.name_en)h+='<div class="item-addr">'+esc(it.name_en||'')+'</div>';
+        if(it.routes && it.routes.length>0){
+          h+='<div class="item-tags">'+it.routes.map(function(r){return '<span class="tag tag-free">'+esc(r)+'</span>';}).join('')+'</div>';
+        }
+        h+='<a href="map.html?stop='+esc(it.id)+'" style="display:inline-block;margin-top:6px;font-size:0.78rem;color:var(--blue);font-weight:500;">🗺️ 查看地圖</a></div>';
+      }
+      h+='</div></section>';
+    }
+    c.innerHTML=h;
+    var ts=c.querySelectorAll('.district-title');
+    for(var k=0;k<ts.length;k++){
+      ts[k].addEventListener('click',function(){
+        var lst=this.nextElementSibling;
+        var opn=!lst.classList.contains('collapsed');
+        var al=c.querySelectorAll('.item-list');
+        for(var m=0;m<al.length;m++){al[m].classList.add('collapsed');al[m].style.maxHeight='0';}
+        if(!opn){lst.classList.remove('collapsed');lst.style.maxHeight=lst.scrollHeight+'px';}
+      });
+    }
+    var jw=document.getElementById('district-jump-wrap');
+    var jm=document.getElementById('district-jump');
+    jw.style.display='';
+    jm.innerHTML='<option value="">📍 跳到地區…</option>';
+    for(var i=0;i<grps.length;i++){
+      jm.innerHTML+='<option value="'+esc(grps[i].district.replace(/'/g,"\\'"))+'">'+esc(grps[i].district)+' ('+grps[i].items.length+')</option>';
+    }
+    jm.onchange=function(){
+      var d=this.value;
+      if(!d)return;
+      var al=c.querySelectorAll('.item-list');
+      for(var m=0;m<al.length;m++){al[m].classList.add('collapsed');al[m].style.maxHeight='0';}
+      var secs=c.querySelectorAll('.district-section');
+      for(var m=0;m<secs.length;m++){
+        var t=secs[m].querySelector('.district-title');
+        if(t&&t.textContent.indexOf(d)!==-1){
+          var lst=t.nextElementSibling;
+          lst.classList.remove('collapsed');
+          lst.style.maxHeight=lst.scrollHeight+'px';
+          secs[m].scrollIntoView({behavior:'smooth',block:'start'});
+          break;
+        }
+      }
+    };
+  }
+
+  fetch('data/bus-stops-index.json').then(function(r){return r.json();}).then(function(data){
+    var stops=[];
+    for(var id in data){
+      var s=data[id];
+      if(s.lat&&s.lng){
+        stops.push({id:id,name_tc:s.name_tc||'',name_en:s.name_en||'',lat:s.lat,lng:s.lng,routes:s.routes||[]});
+      }
+    }
+    stops.forEach(function(it){it._district=inferDistrict(it);});
+    render(groupAndSort(stops));
+    if(typeof window.createSearch==='function'){
+      window.createSearch({
+        container:'#search-container',data:stops,fields:['name_tc','name_en','_district','id'],
+        placeholder:LANG.t('search_placeholder'),
+        onFilter:function(fd){render(groupAndSort(fd));}
+      });
+    }
+  }).catch(function(e){
+    document.getElementById('list-container').innerHTML='<div class="error">載入失敗</div>';
+  });
+})();
+</script>
+</body>
+</html>

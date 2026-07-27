@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>🗺️ 巴士地圖 | 香港巴士便利站</title>
+  <meta name="description" content="香港巴士便利站 - 全港 6,742 個巴士站互動地圖，支援附近車站搜尋及導航。">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-132PFXDSM9"></script>
+  <script>window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-132PFXDSM9');</script>
+  <script src="js/i18n.js" defer></script>
+  <script src="js/animations.js" defer></script>
+  <script src="js/search.js" defer></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Noto Sans TC', sans-serif; overflow: hidden; height: 100%; }
+    #map { position: absolute; top: 162px; bottom: 0; left: 0; right: 0; }
+    #search-container { position: absolute; top: 170px; left: 10px; right: 10px; z-index: 999; max-width: 460px; margin: 0 auto; }
+    .locate-btn {
+      position: absolute; bottom: 220px; right: 20px; z-index: 1000;
+      background: #fff; border: 2px solid #ddd; border-radius: 50%;
+      width: 50px; height: 50px; font-size: 24px; cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center;
+    }
+    .locate-btn:active { background: #eee; }
+    #nearby-panel {
+      position: absolute; bottom: 0; left: 0; right: 0; z-index: 1000;
+      background: #fff; border-radius: 20px 20px 0 0;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+      max-height: 200px; overflow-y: auto; padding: 15px 20px 25px;
+      transition: max-height 0.3s;
+    }
+    #nearby-panel .handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 10px; }
+    .nearby-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0; border-bottom: 1px solid #f0f0f0; cursor: pointer;
+    }
+    .nearby-item:last-child { border-bottom: none; }
+    .nearby-item .num { width: 28px; height: 28px; border-radius: 50%; background: #2563eb; color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+    .nearby-item .info { flex: 1; }
+    .nearby-item .info .name { font-weight: 600; font-size: 15px; }
+    .nearby-item .info .dist { font-size: 12px; color: #888; }
+    .nearby-item .nav-btn { background: #2563eb; color: #fff; border: none; border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; font-weight: 500; white-space: nowrap; }
+    #loading {
+      position: absolute; top: 162px; left: 0; right: 0; bottom: 0; z-index: 2000;
+      background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      font-size: 18px; color: #333; gap: 10px;
+    }
+    #loading .spinner { width: 40px; height: 40px; border: 4px solid #e0e0e0; border-top-color: #2563eb; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .bus-stop-icon { background: #2563eb; color: #fff; border-radius: 8px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+    .bus-stop-icon-pulse { background: #2563eb; color: #fff; border-radius: 8px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; border: 3px solid #fff; box-shadow: 0 0 0 0 rgba(37,99,235,0.5); animation: pulse 1.5s infinite; }
+    @keyframes pulse { to { box-shadow: 0 0 0 15px rgba(37,99,235,0); } }
+    .user-location { background: #059669; border-radius: 50%; width: 20px; height: 20px; border: 3px solid #fff; display: flex; align-items: center; justify-content: center; }
+    .user-location::after { content: ''; position: absolute; width: 44px; height: 44px; border-radius: 50%; border: 3px solid rgba(5,150,105,0.4); animation: pulse-ring 2s infinite; pointer-events: none; }
+    @keyframes pulse-ring { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
+    .leaflet-popup-content-wrapper { border-radius: 12px !important; font-family: 'Noto Sans TC', sans-serif; }
+    .leaflet-popup-content { font-size: 14px; margin: 10px 14px; }
+    .leaflet-popup-content .popup-name { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+    .leaflet-popup-content .popup-addr { color: #666; font-size: 13px; }
+    .leaflet-popup-content .popup-nav { display: inline-block; margin-top: 8px; background: #2563eb; color: #fff; padding: 6px 16px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 500; }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="container">
+      <a href="#" data-lang="zh-Hant">繁體</a>
+      <a href="#" data-lang="zh-Hans">簡體</a>
+      <a href="#" data-lang="en">English</a>
+    </div>
+  </div>
+
+  <nav>
+    <div class="container">
+      <a href="index.html" class="nav-brand">🚌 香港<span>巴士站</span></a>
+      <button class="nav-toggle" aria-label="選單">☰</button>
+      <div class="nav-menu">
+        <a href="index.html"><span class="nav-icon">🏠</span> <span data-i18n="nav_home">首頁</span></a>
+        <a href="map.html" class="active"><span class="nav-icon">🗺️</span> <span data-i18n="nav_map">地圖</span></a>
+        <a href="list.html"><span class="nav-icon">📋</span> <span data-i18n="nav_list">列表</span></a>
+        <a href="routes.html"><span class="nav-icon">🚌</span> <span data-i18n="nav_routes">路線</span></a>
+        <a href="eta.html"><span class="nav-icon">⏱</span> <span data-i18n="nav_eta">到站</span></a>
+        <a href="fav.html"><span class="nav-icon">⭐</span> <span data-i18n="nav_bus_fav">常用</span></a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="page-header" style="padding:10px 0;min-height:auto;">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="index.html" data-i18n="breadcrumb_home">首頁</a> &gt; <span>🗺️ 巴士地圖</span>
+      </div>
+      <h2 style="font-size:1.1rem;margin:2px 0 0;">🗺️ 香港巴士站互動地圖</h2>
+    </div>
+  </section>
+
+  <div id="loading"><div class="spinner"></div><span data-i18n="loading_location">正在定位你的位置...</span></div>
+  <div id="search-container"></div>
+  <div id="map"></div>
+  <button class="locate-btn" id="locateBtn" title="重新定位">📍</button>
+  <div id="nearby-panel"><div class="handle"></div><div id="nearby-list"></div></div>
+
+  <footer>
+    <div class="container">
+      <p data-i18n="footer_copyright">© 2026 香港巴士便利站 | 資料僅供參考，實際情況以現場為準</p>
+      <p style="font-size:0.75rem;color:var(--gray-400);margin-top:4px;" data-i18n="source_bus">資料來源：運輸署 巴士到站時間預報系統</p>
+      <div class="footer-links">
+        <a href="index.html" data-i18n="footer_home">首頁</a>
+        <a href="list.html" data-i18n="footer_list">📋 列表</a>
+        <a href="routes.html" data-i18n="footer_routes">🚌 路線</a>
+        <a href="eta.html" data-i18n="footer_eta">⏱ 到站</a>
+        <a href="fav.html" data-i18n="footer_fav">⭐ 常用</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    var map, userMarker, stopData = [], filteredData = [], mcg;
+    var nearbyPanel = document.getElementById('nearby-list');
+    var loading = document.getElementById('loading');
+    var searchInstance = null;
+
+    function initMap(lat, lng) {
+      map = L.map('map', { zoomControl: false }).setView([lat, lng], 17);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> | <a href="https://carto.com/">CARTO</a>'
+      }).addTo(map);
+
+      var userIcon = L.divIcon({ html: '<div class="user-location"></div>', className: '', iconSize: [20, 20], iconAnchor: [10, 10] });
+      userMarker = L.marker([lat, lng], { icon: userIcon, zIndexOffset: 1000 }).addTo(map).bindPopup(LANG.t('your_location'));
+
+      fetch('data/bus-stops-index.json').then(function(r) { return r.json(); }).then(function(data) {
+        stopData = [];
+        for (var id in data) {
+          var s = data[id];
+          if (s.lat && s.lng) {
+            stopData.push({ id: id, lat: parseFloat(s.lat), lng: parseFloat(s.lng), name_tc: s.name_tc || '', name_en: s.name_en || '', routes: s.routes || [] });
+          }
+        }
+        filteredData = stopData;
+        renderMarkers();
+        showNearest(lat, lng, filteredData);
+        loading.style.display = 'none';
+        searchInstance = createSearch({
+          container: '#search-container',
+          data: filteredData,
+          fields: ['name_tc', 'name_en', 'id'],
+          placeholder: LANG.t('search_placeholder'),
+          onFilter: function(fd) {
+            filteredData = fd;
+            renderMarkers();
+            if (userMarker) showNearest(userMarker.getLatLng().lat, userMarker.getLatLng().lng, filteredData);
+          }
+        });
+      });
+    }
+
+    function renderMarkers() {
+      if (mcg) { map.removeLayer(mcg); }
+      mcg = L.markerClusterGroup({
+        chunkedLoading: true, maxClusterRadius: 50,
+        iconCreateFunction: function(cluster) {
+          return L.divIcon({ html: '<div style="background:#2563eb;color:#fff;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;border:2px solid #fff;">' + cluster.getChildCount() + '</div>', className: '', iconSize: [40, 40] });
+        }
+      });
+      filteredData.forEach(function(s) {
+        var icon = L.divIcon({ html: '🚌', className: 'bus-stop-icon', iconSize: [36, 36] });
+        var marker = L.marker([s.lat, s.lng], { icon: icon });
+        var routesHtml = '';
+        if (s.routes && s.routes.length > 0) {
+          routesHtml = '<div style="margin-top:6px;font-size:12px;color:#666;">路線: ' + s.routes.slice(0, 6).join(', ') + (s.routes.length > 6 ? '...' : '') + '</div>';
+        }
+        marker.bindPopup(
+          '<div class="popup-name">' + (s.name_tc || '巴士站') + '</div>' +
+          '<div class="popup-addr">' + (s.name_en || '') + '</div>' +
+          routesHtml +
+          '<a class="popup-nav" href="https://www.google.com/maps/dir/?api=1&destination=' + s.lat + ',' + s.lng + '" target="_blank">' + LANG.t('google_nav') + '</a>'
+        );
+        mcg.addLayer(marker);
+      });
+      map.addLayer(mcg);
+    }
+
+    function haversine(lat1, lng1, lat2, lng2) {
+      var R = 6371000;
+      var dLat = (lat2 - lat1) * Math.PI / 180;
+      var dLng = (lng2 - lng1) * Math.PI / 180;
+      var a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    function showNearest(lat, lng, data) {
+      var withDist = data.map(function(s) {
+        return { item: s, dist: haversine(lat, lng, s.lat, s.lng) };
+      }).sort(function(a, b) { return a.dist - b.dist; });
+
+      var html = '<div style="font-weight:700;font-size:14px;margin-bottom:5px;">' + LANG.t('nearby_title') + '</div>';
+      withDist.slice(0, 5).forEach(function(d, i) {
+        var meters = Math.round(d.dist);
+        var walkMin = Math.round(d.dist / 80);
+        html += '<div class="nearby-item" onclick="window.open(\'https://www.google.com/maps/dir/?api=1&destination=' + d.item.lat + ',' + d.item.lng + '\', \'_blank\')">';
+        html += '<div class="num">' + (i+1) + '</div>';
+        html += '<div class="info"><div class="name">' + (d.item.name_tc || '巴士站') + '</div><div class="dist">' + meters + 'm（步行約 ' + walkMin + ' 分鐘）</div></div>';
+        html += '<button class="nav-btn" onclick="event.stopPropagation();window.open(\'https://www.google.com/maps/dir/?api=1&destination=' + d.item.lat + ',' + d.item.lng + '\', \'_blank\')">' + LANG.t('navigate') + '</button>';
+        html += '</div>';
+      });
+      nearbyPanel.innerHTML = html;
+    }
+
+    var watchId = null;
+    if (navigator.geolocation) {
+      watchId = navigator.geolocation.watchPosition(
+        function(pos) {
+          var lat = pos.coords.latitude, lng = pos.coords.longitude;
+          if (!map) { initMap(lat, lng); } else {
+            if (userMarker) { userMarker.setLatLng([lat, lng]); }
+            if (filteredData.length) { showNearest(lat, lng, filteredData); }
+          }
+        },
+        function() { if (!map) { fallbackLocation(); } },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+      );
+    } else { fallbackLocation(); }
+
+    function fallbackLocation() {
+      loading.innerHTML = '<div class="spinner"></div><span>' + LANG.t('loading_ip') + '</span>';
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', 'https://ipapi.co/json/', true);
+      xhr.timeout = 5000;
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          var ip = JSON.parse(xhr.responseText);
+          if (ip.latitude && ip.longitude && ip.city && ip.country === 'HK') {
+            initMap(ip.latitude, ip.longitude);
+            return;
+          }
+        }
+        showDistrictPicker();
+      };
+      xhr.onerror = showDistrictPicker;
+      xhr.ontimeout = showDistrictPicker;
+      xhr.send();
+    }
+
+    function showDistrictPicker() {
+      loading.innerHTML = '<div style="text-align:center;padding:20px;"><div style="font-size:48px;margin-bottom:10px;">📍</div><div style="font-size:16px;margin-bottom:15px;">' + LANG.t('location_fail') + '<br>' + LANG.t('location_select') + '</div><div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;">' +
+        ['尖沙咀',22.3193,114.1694,'中環',22.2820,114.1580,'旺角',22.3196,114.1702,'銅鑼灣',22.2800,114.1830,'灣仔',22.2760,114.1730,'佐敦',22.3040,114.1710,'深水埗',22.3320,114.1620,'沙田',22.3810,114.1880].reduce(function(a,_,i,arr) {
+          if (i%3===0) a.push('<button onclick="initMap('+arr[i+1]+','+arr[i+2]+')" style="padding:10px 18px;border:1px solid #ddd;border-radius:8px;background:#fff;font-size:14px;cursor:pointer;">'+arr[i]+'</button>'); return a;
+        }, []).join('') + '</div></div>';
+    }
+
+    document.getElementById('locateBtn').onclick = function() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(pos) {
+          map.setView([pos.coords.latitude, pos.coords.longitude], 17);
+          if (userMarker) { userMarker.setLatLng([pos.coords.latitude, pos.coords.longitude]); }
+          if (filteredData.length) { showNearest(pos.coords.latitude, pos.coords.longitude, filteredData); }
+        });
+      }
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>⏱ 即時到站 | 香港巴士便利站</title>
+  <meta name="description" content="香港巴士便利站 - 即時巴士到站時間查詢，支援 KMB 九巴及 LWB 龍運巴士全港路線。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-132PFXDSM9"></script>
+  <script src="js/main.js" defer></script>
+  <script src="js/i18n.js" defer></script>
+  <script src="js/animations.js" defer></script>
+  <script src="js/eta.js" defer></script>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="container">
+      <a href="#" data-lang="zh-Hant">繁體</a>
+      <a href="#" data-lang="zh-Hans">簡體</a>
+      <a href="#" data-lang="en">English</a>
+    </div>
+  </div>
+
+  <nav>
+    <div class="container">
+      <a href="index.html" class="nav-brand">🚌 香港<span>巴士站</span></a>
+      <button class="nav-toggle" aria-label="選單">☰</button>
+      <div class="nav-menu">
+        <a href="index.html"><span class="nav-icon">🏠</span> <span data-i18n="nav_home">首頁</span></a>
+        <a href="map.html"><span class="nav-icon">🗺️</span> <span data-i18n="nav_map">地圖</span></a>
+        <a href="list.html"><span class="nav-icon">📋</span> <span data-i18n="nav_list">列表</span></a>
+        <a href="routes.html"><span class="nav-icon">🚌</span> <span data-i18n="nav_routes">路線</span></a>
+        <a href="eta.html" class="active"><span class="nav-icon">⏱</span> <span data-i18n="nav_eta">到站</span></a>
+        <a href="fav.html"><span class="nav-icon">⭐</span> <span data-i18n="nav_bus_fav">常用</span></a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="page-header">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="index.html" data-i18n="breadcrumb_home">首頁</a> &gt; <span>⏱ 即時到站</span>
+      </div>
+      <h2>⏱ 即時巴士到站</h2>
+      <p data-i18n="eta_subtitle">查詢巴士即時到站時間</p>
+    </div>
+  </section>
+
+  <main class="container">
+    <div class="ad-placeholder" style="padding:0;border:none;background:transparent;">
+      <div style="text-align:center;color:var(--gray-400);font-size:0.8rem;padding:12px;">📢 Ad Space · <span data-i18n="ad_placeholder">廣告招商 — 請聯繫我們</span></div>
+    </div>
+
+    <div class="eta-typeahead">
+      <div class="search-bar" style="margin-bottom:0;">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" id="eta-search-input"
+            data-i18n="eta_search_hint" placeholder="輸入路線編號，例如 1A、968、E33" autocomplete="off">
+          <button class="search-clear" id="eta-search-clear" style="display:none">✕</button>
+        </div>
+      </div>
+      <div class="eta-typeahead-suggestions" id="eta-suggestions"></div>
+    </div>
+
+    <div id="eta-content" style="display:none;">
+      <div class="eta-route-info" id="eta-route-info">
+        <div class="eta-route-number" id="eta-route-number"></div>
+        <div class="eta-route-dir" id="eta-route-dir"></div>
+        <div class="eta-route-stops-count" id="eta-stops-count"></div>
+        <div class="eta-direction-toggle" id="eta-direction-toggle"></div>
+      </div>
+
+      <div class="eta-refresh-bar">
+        <span id="eta-refresh-timestamp"></span>
+        <button class="eta-refresh-btn" id="eta-manual-refresh">⟳ <span data-i18n="eta_refresh">重新整理</span></button>
+      </div>
+
+      <div id="eta-stop-list" class="eta-stop-list">
+        <div class="eta-skeleton-row"><div class="skeleton eta-skeleton-seq"></div><div class="skeleton eta-skeleton-name"></div><div class="skeleton eta-skeleton-eta"></div></div>
+        <div class="eta-skeleton-row"><div class="skeleton eta-skeleton-seq"></div><div class="skeleton eta-skeleton-name"></div><div class="skeleton eta-skeleton-eta"></div></div>
+        <div class="eta-skeleton-row"><div class="skeleton eta-skeleton-seq"></div><div class="skeleton eta-skeleton-name"></div><div class="skeleton eta-skeleton-eta"></div></div>
+        <div class="eta-skeleton-row"><div class="skeleton eta-skeleton-seq"></div><div class="skeleton eta-skeleton-name"></div><div class="skeleton eta-skeleton-eta"></div></div>
+        <div class="eta-skeleton-row"><div class="skeleton eta-skeleton-seq"></div><div class="skeleton eta-skeleton-name"></div><div class="skeleton eta-skeleton-eta"></div></div>
+      </div>
+    </div>
+
+    <div id="eta-empty" style="text-align:center;padding:60px 20px;color:var(--gray-400);">
+      <div style="font-size:4rem;margin-bottom:12px;">⏱</div>
+      <p data-i18n="eta_empty" style="font-size:1rem;">搜尋路線編號以查看即時到站資訊</p>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p data-i18n="footer_copyright">© 2026 香港巴士便利站 | 資料僅供參考，實際情況以現場為準</p>
+      <p style="font-size:0.75rem;color:var(--gray-400);margin-top:4px;" data-i18n="source_bus">資料來源：運輸署 巴士到站時間預報系統</p>
+      <div class="footer-links">
+        <a href="index.html" data-i18n="footer_home">首頁</a>
+        <a href="map.html" data-i18n="footer_map">🗺️ 地圖</a>
+        <a href="list.html" data-i18n="footer_list">📋 列表</a>
+        <a href="routes.html" data-i18n="footer_routes">🚌 路線</a>
+        <a href="fav.html" data-i18n="footer_fav">⭐ 常用</a>
+      </div>
+    </div>
+  </footer>
+
+<script>
+(function() {
+  'use strict';
+
+  var CORS_PROXY = 'https://corsproxy.io/?';
+  var allRoutes = [];
+  var currentRoute = null;
+  var currentBound = 'O';
+  var refreshTimer = null;
+  var etaDataCache = {};
+
+  var searchInput = document.getElementById('eta-search-input');
+  var suggestions = document.getElementById('eta-suggestions');
+  var clearBtn = document.getElementById('eta-search-clear');
+  var etaContent = document.getElementById('eta-content');
+  var etaEmpty = document.getElementById('eta-empty');
+  var etaStopList = document.getElementById('eta-stop-list');
+  var etaRouteNumber = document.getElementById('eta-route-number');
+  var etaRouteDir = document.getElementById('eta-route-dir');
+  var etaStopsCount = document.getElementById('eta-stops-count');
+  var etaDirToggle = document.getElementById('eta-direction-toggle');
+  var etaRefreshTimestamp = document.getElementById('eta-refresh-timestamp');
+
+  function esc(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function handleSearchInput(val) {
+    clearBtn.style.display = val ? '' : 'none';
+    if (!val.trim()) {
+      suggestions.classList.remove('show');
+      return;
+    }
+    var q = val.trim().toLowerCase();
+    var matches = [];
+    var seen = {};
+    allRoutes.forEach(function(r) {
+      if (r.route.toLowerCase().indexOf(q) !== -1 && !seen[r.route]) {
+        seen[r.route] = true;
+        matches.push(r);
+      }
+    });
+    if (matches.length === 0) {
+      suggestions.classList.remove('show');
+      return;
+    }
+    suggestions.innerHTML = matches.slice(0, 10).map(function(r) {
+      var dir = (r.orig_tc || '') + ' → ' + (r.dest_tc || '');
+      return '<div class="eta-typeahead-sug" onclick="selectRoute(\'' + esc(r.route) + '\')">' +
+        '<span><span class="eta-typeahead-sug-num">' + esc(r.route) + '</span><br><span class="eta-typeahead-sug-dir">' + esc(dir) + '</span></span>' +
+        '<span class="route-badge ' + ((r.company || 'KMB') === 'KMB' ? 'kmb' : 'lwb') + '">' + (r.company || 'KMB') + '</span>' +
+      '</div>';
+    }).join('');
+    suggestions.classList.add('show');
+  }
+
+  window.selectRoute = function(route) {
+    searchInput.value = route;
+    suggestions.classList.remove('show');
+    loadRoute(route);
+  };
+
+  function loadRoute(route) {
+    etaContent.style.display = 'none';
+    etaEmpty.style.display = 'none';
+    etaStopList.innerHTML = '';
+    for (var i = 0; i < 5; i++) {
+      etaStopList.innerHTML += '<div class="eta-skeleton-row"><div class="skeleton eta-skeleton-seq"></div><div class="skeleton eta-skeleton-name"></div><div class="skeleton eta-skeleton-eta"></div></div>';
+    }
+    etaContent.style.display = '';
+
+    currentRoute = route;
+    currentBound = 'O';
+
+    var routeData = allRoutes.filter(function(r) { return r.route === route; });
+    if (routeData.length === 0) return;
+
+    var boundO = routeData.filter(function(r) { return r.bound === 'O'; })[0];
+    var boundI = routeData.filter(function(r) { return r.bound === 'I'; })[0];
+
+    // Build direction toggle
+    var dirHtml = '';
+    if (boundO) {
+      dirHtml += '<button class="eta-dir-btn active" data-bound="O" onclick="switchDirection(\'O\')">O 往 ' + esc(boundO.dest_tc || '') + '</button>';
+    }
+    if (boundI) {
+      dirHtml += '<button class="eta-dir-btn" data-bound="I" onclick="switchDirection(\'I\')">I 往 ' + esc(boundI.dest_tc || '') + '</button>';
+    }
+    etaDirToggle.innerHTML = dirHtml;
+
+    var isKMB = routeData[0].company !== 'LWB';
+    etaRouteNumber.innerHTML = esc(route) + ' <span class="route-badge ' + (isKMB ? 'kmb' : 'lwb') + '">' + (isKMB ? 'KMB' : 'LWB') + '</span>';
+
+    var dirText = '';
+    if (boundO) dirText = esc((boundO.orig_tc || '') + ' → ' + (boundO.dest_tc || ''));
+    etaRouteDir.textContent = dirText;
+
+    fetchETA(route, currentBound);
+    startRefreshTimer(route);
+  }
+
+  window.switchDirection = function(bound) {
+    if (bound === currentBound) return;
+    currentBound = bound;
+    document.querySelectorAll('.eta-dir-btn').forEach(function(b) {
+      b.classList.toggle('active', b.getAttribute('data-bound') === bound);
+    });
+
+    var routeData = allRoutes.filter(function(r) { return r.route === currentRoute && r.bound === bound; });
+    if (routeData.length > 0) {
+      var rd = routeData[0];
+      etaRouteDir.textContent = esc((rd.orig_tc || '') + ' → ' + (rd.dest_tc || ''));
+    }
+
+    etaStopList.innerHTML = '';
+    for (var i = 0; i < 5; i++) {
+      etaStopList.innerHTML += '<div class="eta-skeleton-row"><div class="skeleton eta-skeleton-seq"></div><div class="skeleton eta-skeleton-name"></div><div class="skeleton eta-skeleton-eta"></div></div>';
+    }
+
+    fetchETA(currentRoute, bound);
+    startRefreshTimer(currentRoute);
+  };
+
+  function fetchETA(route, bound) {
+    var routeData = allRoutes.filter(function(r) { return r.route === route && r.bound === bound; });
+    if (routeData.length === 0 || !routeData[0].stops) {
+      etaStopList.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray-500);">暫無車站資料</div>';
+      return;
+    }
+
+    var stops = routeData[0].stops;
+    etaStopsCount.textContent = LANG.t('eta_stops', { n: stops.length });
+
+    // Fetch ETA for each stop
+    var promises = stops.map(function(s) {
+      var url = 'https://data.etabus.gov.hk/v1/transport/kmb/eta/' +
+        encodeURIComponent(route) + '/' +
+        encodeURIComponent(bound) + '/' +
+        encodeURIComponent(s.seq);
+      return fetch(CORS_PROXY + encodeURIComponent(url))
+        .then(function(r) { return r.json(); })
+        .then(function(d) { return { seq: s.seq, stop_id: s.stop_id, name_tc: s.name_tc, data: (d && d.data) || [] }; })
+        .catch(function() { return { seq: s.seq, stop_id: s.stop_id, name_tc: s.name_tc, data: [] }; });
+    });
+
+    Promise.all(promises).then(function(results) {
+      var now = new Date();
+      var h = '';
+      results.forEach(function(r, i) {
+        var etas = r.data.filter(function(e) { return e.stop === r.stop_id && e.t && new Date(e.t) > now; }).slice(0, 1);
+        var etaText = '';
+        var etaClass = 'gray';
+        if (etas.length > 0) {
+          var mins = Math.round((new Date(etas[0].t) - now) / 60000);
+          if (mins <= 0) { etaText = LANG.t('eta_due'); etaClass = 'red'; }
+          else if (mins <= 2) { etaText = LANG.t('eta_arriving'); etaClass = 'amber'; }
+          else { etaText = mins + ' ' + LANG.t('eta_min'); etaClass = 'green'; }
+        } else {
+          etaText = LANG.t('eta_no_data');
+        }
+        h += '<div class="eta-stop-row">' +
+          '<span class="eta-stop-seq">' + (i + 1) + '.</span>' +
+          '<span class="eta-stop-name">' + esc(r.name_tc || '') + '</span>' +
+          '<span class="eta-stop-eta ' + etaClass + '">' + etaText + '</span>' +
+        '</div>';
+      });
+      etaStopList.innerHTML = h;
+      etaRefreshTimestamp.textContent = LANG.t('eta_just_now') + ' (' + now.toLocaleTimeString() + ')';
+    });
+  }
+
+  function startRefreshTimer(route) {
+    if (refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(function() {
+      if (currentRoute) {
+        fetchETA(currentRoute, currentBound);
+      }
+    }, 30000);
+  }
+
+  searchInput.addEventListener('input', function() {
+    handleSearchInput(this.value);
+  });
+
+  clearBtn.addEventListener('click', function() {
+    searchInput.value = '';
+    clearBtn.style.display = 'none';
+    suggestions.classList.remove('show');
+    if (refreshTimer) clearInterval(refreshTimer);
+    etaContent.style.display = 'none';
+    etaEmpty.style.display = '';
+  });
+
+  searchInput.addEventListener('focus', function() {
+    if (this.value.trim()) handleSearchInput(this.value);
+  });
+
+  document.getElementById('eta-manual-refresh').addEventListener('click', function() {
+    if (currentRoute) {
+      fetchETA(currentRoute, currentBound);
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.eta-typeahead')) {
+      suggestions.classList.remove('show');
+    }
+  });
+
+  // Load route data
+  fetch('data/bus-routes-index.json').then(function(r) { return r.json(); }).then(function(data) {
+    allRoutes = data;
+
+    // Check URL params
+    var params = new URLSearchParams(window.location.search);
+    var routeParam = params.get('route');
+    if (routeParam) {
+      searchInput.value = routeParam;
+      loadRoute(routeParam);
+      var boundParam = params.get('bound');
+      if (boundParam && (boundParam === 'O' || boundParam === 'I')) {
+        setTimeout(function() { switchDirection(boundParam); }, 500);
+      }
+    }
+  }).catch(function() {
+    etaEmpty.innerHTML = '<div style="padding:40px;color:var(--red);">⚠️ 無法載入路線資料</div>';
+  });
+
+  document.addEventListener('langchange', function() {
+    if (currentRoute) fetchETA(currentRoute, currentBound);
+  });
+})();
+</script>
+</body>
+</html>

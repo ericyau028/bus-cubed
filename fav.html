@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>⭐ 常用路線 | 香港巴士便利站</title>
+  <meta name="description" content="儲存常用巴士路線，一鍵查看即時到站時間">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/bus-fav.css">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-132PFXDSM9"></script>
+  <script src="js/main.js" defer></script>
+  <script src="js/i18n.js" defer></script>
+  <script src="js/animations.js" defer></script>
+  <script src="js/bus-fav.js" defer></script>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="container">
+      <a href="#" data-lang="zh-Hant">繁體</a>
+      <a href="#" data-lang="zh-Hans">簡體</a>
+      <a href="#" data-lang="en">English</a>
+    </div>
+  </div>
+
+  <nav>
+    <div class="container">
+      <a href="index.html" class="nav-brand">🚌 香港<span>巴士站</span></a>
+      <button class="nav-toggle" aria-label="選單">☰</button>
+      <div class="nav-menu">
+        <a href="index.html"><span class="nav-icon">🏠</span> <span data-i18n="nav_home">首頁</span></a>
+        <a href="map.html"><span class="nav-icon">🗺️</span> <span data-i18n="nav_map">地圖</span></a>
+        <a href="list.html"><span class="nav-icon">📋</span> <span data-i18n="nav_list">列表</span></a>
+        <a href="routes.html"><span class="nav-icon">🚌</span> <span data-i18n="nav_routes">路線</span></a>
+        <a href="eta.html"><span class="nav-icon">⏱</span> <span data-i18n="nav_eta">到站</span></a>
+        <a href="fav.html" class="active"><span class="nav-icon">⭐</span> <span data-i18n="nav_bus_fav">常用</span></a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="page-header">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="index.html" data-i18n="breadcrumb_home">首頁</a> &gt; <span>⭐ 常用路線</span>
+      </div>
+      <h2 data-i18n="bus_fav_title">⭐ 常用路線</h2>
+      <p data-i18n="bus_fav_subtitle">儲存常用巴士路線，即時查看到站時間</p>
+    </div>
+  </section>
+
+  <main class="container">
+    <div class="ad-placeholder" style="padding:0;border:none;background:transparent;">
+      <div style="text-align:center;color:var(--gray-400);font-size:0.8rem;padding:12px;">📢 Ad Space · <span data-i18n="ad_placeholder">廣告招商 — 請聯繫我們</span></div>
+    </div>
+
+    <div class="fav-warning" id="fav-warning" data-i18n="bus_fav_global_error">⚠️ 部分路線資料無法載入，請稍後再試</div>
+
+    <div id="fav-empty" class="fav-empty">
+      <span class="fav-empty-icon">🚌</span>
+      <h3 data-i18n="bus_fav_empty_title">尚未加入常用路線</h3>
+      <p data-i18n="bus_fav_empty_desc">點擊下方按鈕，加入你常搭的巴士路線與車站<br>到站時間一目了然</p>
+      <button class="btn btn-primary" onclick="FAV_openModal()" style="display:inline-flex;align-items:center;gap:6px;padding:12px 24px;border-radius:var(--radius);font-weight:600;font-size:0.95rem;cursor:pointer;background:var(--blue);color:#fff;border:none;font-family:inherit;min-height:48px;">
+        ➕ <span data-i18n="bus_fav_add_first">新增常用路線</span>
+      </button>
+    </div>
+
+    <div id="fav-dashboard" style="display:none;">
+      <div id="fav-warning" class="fav-warning">⚠️ 部分路線資料無法載入，請稍後再試</div>
+      <div style="text-align:center;margin-bottom:12px;">
+        <button onclick="FAV_openModal()" style="display:inline-flex;align-items:center;gap:4px;padding:8px 16px;border:1.5px solid var(--gray-200);border-radius:var(--radius);background:var(--white);color:var(--gray-700);font-family:inherit;font-size:0.85rem;cursor:pointer;transition:all var(--transition);min-height:44px;">
+          ➕ <span data-i18n="bus_fav_add_first">新增常用路線</span>
+        </button>
+      </div>
+      <div id="fav-grid" class="fav-grid"></div>
+    </div>
+  </main>
+
+  <button class="fav-fab" id="fav-fab" onclick="FAV_openModal()" title="新增常用路線" style="display:none;">➕</button>
+
+  <div class="fav-modal-overlay" id="fav-modal">
+    <div class="fav-modal-panel">
+      <div class="fav-modal-header">
+        <span class="fav-modal-title" data-i18n="bus_fav_add_title">➕ 新增常用路線</span>
+        <button class="fav-modal-close" onclick="FAV_closeModal()">✕</button>
+      </div>
+
+      <div class="fav-steps">
+        <div class="fav-step-dot active"></div>
+        <div class="fav-step-dot"></div>
+        <div class="fav-step-dot"></div>
+      </div>
+
+      <div class="fav-step-panel active" data-step="1">
+        <div class="fav-step-label" data-i18n="bus_fav_step1">步驟 1：搜尋路線號碼</div>
+        <div class="fav-route-input-wrap">
+          <input class="fav-modal-search" id="fav-route-input" type="text"
+            data-i18n="bus_fav_step1_hint" placeholder="輸入路線編號，例如 1A、968、E33"
+            oninput="FAV_searchRoute(this.value)" autocomplete="off">
+          <div class="fav-route-suggestions" id="fav-route-suggestions"></div>
+        </div>
+      </div>
+
+      <div class="fav-step-panel" data-step="2">
+        <div class="fav-step-label" data-i18n="bus_fav_step2">步驟 2：選擇方向</div>
+        <div id="fav-dir-container"></div>
+      </div>
+
+      <div class="fav-step-panel" data-step="3">
+        <div class="fav-step-label" data-i18n="bus_fav_step3">步驟 3：選擇巴士站</div>
+        <input class="fav-modal-search" type="text" data-i18n="bus_fav_step3_hint"
+          placeholder="搜尋車站名稱..." oninput="FAV_searchStops(this.value)" autocomplete="off">
+        <div id="fav-stop-container"></div>
+      </div>
+
+      <div class="fav-step-btns">
+        <button class="fav-step-btn secondary" id="fav-step-back" onclick="FAV_prevStep()" style="display:none;" data-i18n="bus_fav_back">上一步</button>
+        <button class="fav-step-btn primary" id="fav-step-next" onclick="FAV_nextStep()" disabled data-i18n="bus_fav_next_step">下一步</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <p data-i18n="footer_copyright">© 2026 香港巴士便利站 | 資料僅供參考，實際情況以現場為準</p>
+      <p style="font-size:0.75rem;color:var(--gray-400);margin-top:4px;" data-i18n="source_bus">資料來源：運輸署 巴士到站時間預報系統</p>
+      <div class="footer-links">
+        <a href="index.html" data-i18n="footer_home">首頁</a>
+        <a href="map.html" data-i18n="footer_map">🗺️ 地圖</a>
+        <a href="list.html" data-i18n="footer_list">📋 列表</a>
+        <a href="routes.html" data-i18n="footer_routes">🚌 路線</a>
+        <a href="eta.html" data-i18n="footer_eta">⏱ 到站</a>
+        <a href="fav.html" data-i18n="footer_fav">⭐ 常用</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

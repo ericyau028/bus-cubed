@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>🚌 路線目錄 | 香港巴士便利站</title>
+  <meta name="description" content="香港巴士便利站 - 瀏覽香港所有巴士路線，包含 KMB 九巴及 LWB 龍運巴士，支援路線搜尋及車站查閱。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-132PFXDSM9"></script>
+  <script src="js/main.js" defer></script>
+  <script src="js/i18n.js" defer></script>
+  <script src="js/animations.js" defer></script>
+  <script src="js/search.js" defer></script>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="container">
+      <a href="#" data-lang="zh-Hant">繁體</a>
+      <a href="#" data-lang="zh-Hans">簡體</a>
+      <a href="#" data-lang="en">English</a>
+    </div>
+  </div>
+
+  <nav>
+    <div class="container">
+      <a href="index.html" class="nav-brand">🚌 香港<span>巴士站</span></a>
+      <button class="nav-toggle" aria-label="選單">☰</button>
+      <div class="nav-menu">
+        <a href="index.html"><span class="nav-icon">🏠</span> <span data-i18n="nav_home">首頁</span></a>
+        <a href="map.html"><span class="nav-icon">🗺️</span> <span data-i18n="nav_map">地圖</span></a>
+        <a href="list.html"><span class="nav-icon">📋</span> <span data-i18n="nav_list">列表</span></a>
+        <a href="routes.html" class="active"><span class="nav-icon">🚌</span> <span data-i18n="nav_routes">路線</span></a>
+        <a href="eta.html"><span class="nav-icon">⏱</span> <span data-i18n="nav_eta">到站</span></a>
+        <a href="fav.html"><span class="nav-icon">⭐</span> <span data-i18n="nav_bus_fav">常用</span></a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="page-header">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="index.html" data-i18n="breadcrumb_home">首頁</a> &gt; <span>🚌 路線目錄</span>
+      </div>
+      <h2>🚌 巴士路線目錄</h2>
+      <p data-i18n="routes_subtitle">瀏覽香港所有巴士路線</p>
+    </div>
+  </section>
+
+  <main class="container">
+    <div class="ad-placeholder" style="padding:0;border:none;background:transparent;">
+      <div style="text-align:center;color:var(--gray-400);font-size:0.8rem;padding:12px;">📢 Ad Space · <span data-i18n="ad_placeholder">廣告招商 — 請聯繫我們</span></div>
+    </div>
+
+    <div id="search-container"></div>
+    <div class="filter-pills" id="filter-pills">
+      <button class="filter-pill active" data-region="all" data-i18n="filter_all">全部</button>
+      <button class="filter-pill" data-region="kowloon" data-i18n="filter_kowloon">九龍</button>
+      <button class="filter-pill" data-region="hk" data-i18n="filter_hk_island">港島</button>
+      <button class="filter-pill" data-region="nt" data-i18n="filter_nt">新界</button>
+      <button class="filter-pill" data-region="cross" data-i18n="filter_cross">過海</button>
+      <button class="filter-pill" data-region="airport" data-i18n="filter_airport">機場</button>
+    </div>
+    <div id="route-count" style="font-size:0.8rem;color:var(--gray-400);margin-bottom:8px;"></div>
+    <div id="route-grid" class="route-grid"></div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p data-i18n="footer_copyright">© 2026 香港巴士便利站 | 資料僅供參考，實際情況以現場為準</p>
+      <p style="font-size:0.75rem;color:var(--gray-400);margin-top:4px;" data-i18n="source_bus">資料來源：運輸署 巴士到站時間預報系統</p>
+      <div class="footer-links">
+        <a href="index.html" data-i18n="footer_home">首頁</a>
+        <a href="map.html" data-i18n="footer_map">🗺️ 地圖</a>
+        <a href="list.html" data-i18n="footer_list">📋 列表</a>
+        <a href="eta.html" data-i18n="footer_eta">⏱ 到站</a>
+        <a href="fav.html" data-i18n="footer_fav">⭐ 常用</a>
+      </div>
+    </div>
+  </footer>
+
+<script>
+(function() {
+  var allRoutes = [];
+  var filteredRoutes = [];
+  var currentRegion = 'all';
+
+  var REGION_MAP = {
+    '1': 'kowloon','1A': 'kowloon','2': 'kowloon','2A': 'kowloon','2B': 'kowloon','2D': 'kowloon','2E': 'kowloon','2F': 'kowloon',
+    '3B': 'kowloon','3C': 'kowloon','3D': 'kowloon','3M': 'kowloon',
+    '5': 'kowloon','5A': 'kowloon','5C': 'kowloon','5D': 'kowloon','5M': 'kowloon','5P': 'kowloon',
+    '6': 'kowloon','6C': 'kowloon','6D': 'kowloon','6F': 'kowloon','6P': 'kowloon',
+    '7': 'kowloon','7B': 'kowloon','8': 'kowloon','8A': 'kowloon','8P': 'kowloon','9': 'kowloon',
+    '10': 'kowloon','11': 'kowloon','11B': 'kowloon','11C': 'kowloon','11D': 'kowloon','11K': 'kowloon','11X': 'kowloon',
+    '12': 'kowloon','12A': 'kowloon','13D': 'kowloon','13M': 'kowloon','13P': 'kowloon','13X': 'kowloon',
+    '14': 'kowloon','14B': 'kowloon','14H': 'kowloon','14X': 'kowloon','15': 'kowloon','15A': 'kowloon','15X': 'kowloon',
+    '16': 'kowloon','16M': 'kowloon','17': 'kowloon','18': 'kowloon',
+    '20': 'kowloon','21': 'kowloon','22': 'kowloon','22M': 'kowloon','23': 'kowloon','23M': 'kowloon','24': 'kowloon',
+    '26': 'kowloon','26M': 'kowloon','27': 'kowloon','28': 'kowloon','28B': 'kowloon',
+    '29M': 'kowloon','31B': 'kowloon','32': 'kowloon','33': 'kowloon','34': 'kowloon','35A': 'kowloon',
+    '36': 'kowloon','36A': 'kowloon','36B': 'kowloon','37': 'kowloon','38': 'kowloon',
+    '39A': 'kowloon','39M': 'kowloon','40': 'kowloon','40A': 'kowloon','40P': 'kowloon','41': 'kowloon',
+    '41A': 'kowloon','42': 'kowloon','42A': 'kowloon','42C': 'kowloon','43': 'kowloon','43A': 'kowloon',
+    '43C': 'kowloon','43M': 'kowloon','44': 'kowloon','44M': 'kowloon','45': 'kowloon',
+    '46': 'kowloon','47': 'kowloon','48X': 'kowloon','49': 'kowloon','49A': 'kowloon',
+    '52X': 'nt','53': 'nt','54': 'nt','55': 'nt','56': 'nt','57M': 'nt','58M': 'nt','58X': 'nt',
+    '59A': 'nt','59M': 'nt','59X': 'nt','60M': 'nt','60X': 'nt','61M': 'nt','61X': 'nt',
+    '62X': 'nt','63X': 'nt','64K': 'nt','64P': 'nt','65K': 'nt','65M': 'nt',
+    '66M': 'nt','66X': 'nt','67A': 'nt','67M': 'nt','67X': 'nt',
+    '68': 'nt','68A': 'nt','68E': 'nt','68F': 'nt','68M': 'nt','68X': 'nt',
+    '69': 'nt','69C': 'nt','69M': 'nt','69P': 'nt','69X': 'nt',
+    '70K': 'nt','71A': 'nt','71K': 'nt','72': 'nt','72A': 'nt','72K': 'nt','73': 'nt','73A': 'nt',
+    '73B': 'nt','73K': 'nt','73X': 'nt','74A': 'nt','74C': 'nt','74D': 'nt','74E': 'nt',
+    '74K': 'nt','74P': 'nt','74X': 'nt','75K': 'nt','75P': 'nt','75X': 'nt',
+    '76K': 'nt','77K': 'nt','78': 'nt','78A': 'nt','79K': 'nt',
+    '80': 'nt','80K': 'nt','80M': 'nt','80X': 'nt','81': 'nt','81K': 'nt','82B': 'nt',
+    '82C': 'nt','82D': 'nt','82K': 'nt','82P': 'nt','82X': 'nt','83A': 'nt','83K': 'nt',
+    '83S': 'nt','83X': 'nt','84M': 'nt','85': 'nt','85A': 'nt','85B': 'nt','85K': 'nt',
+    '85M': 'nt','85S': 'nt','85X': 'nt','86': 'nt','86A': 'nt','86K': 'nt','86S': 'nt',
+    '87B': 'nt','87D': 'nt','87E': 'nt','87K': 'nt','87P': 'nt','87S': 'nt',
+    '88': 'nt','88K': 'nt','88X': 'nt','89': 'nt','89B': 'nt','89C': 'nt','89D': 'nt',
+    '89P': 'nt','89S': 'nt','89X': 'nt',
+    '91': 'nt','91M': 'nt','91P': 'nt','92': 'nt','93A': 'nt','93K': 'nt','93M': 'nt',
+    '94': 'nt','95': 'nt','95M': 'nt','96': 'nt','97': 'nt','98': 'nt','98A': 'nt',
+    '98C': 'nt','98D': 'nt','98P': 'nt','98R': 'nt','98S': 'nt','99': 'nt',
+    '99R': 'nt','103': 'cross','104': 'cross','106': 'cross','107': 'cross','108': 'cross',
+    '109': 'cross','110': 'cross','111': 'cross','112': 'cross','113': 'cross','114': 'cross',
+    '115': 'cross','116': 'cross','117': 'cross','118': 'cross','170': 'cross','171': 'cross',
+    '182': 'cross','301': 'cross','302': 'cross','307': 'cross','373': 'cross','601': 'cross',
+    '601P': 'cross','603': 'cross','613': 'cross','619': 'cross','621': 'cross','641': 'cross',
+    '671': 'cross','673': 'cross','678': 'cross','680': 'cross','681': 'cross','682': 'cross',
+    '690': 'cross','692': 'cross','694': 'cross','904': 'cross','905': 'cross','914': 'cross',
+    '930': 'cross','930A': 'cross','930X': 'cross','934': 'cross','935': 'cross','936': 'cross',
+    '948': 'cross','960': 'cross','961': 'cross','962': 'cross','967': 'cross','968': 'cross',
+    '969': 'cross','970': 'cross','970X': 'cross','971': 'cross','973': 'cross',
+    'A10': 'airport','A11': 'airport','A12': 'airport','A20': 'airport','A21': 'airport',
+    'A22': 'airport','A23': 'airport','A25': 'airport','A26': 'airport','A29': 'airport',
+    'A29P': 'airport','A31': 'airport','A32': 'airport','A33': 'airport','A36': 'airport',
+    'A37': 'airport','A38': 'airport','A41': 'airport','A41P': 'airport','A43': 'airport',
+    'A43P': 'airport','A47X': 'airport','E11': 'airport','E21': 'airport','E22': 'airport',
+    'E22A': 'airport','E23': 'airport','E31': 'airport','E32': 'airport','E33': 'airport',
+    'E34A': 'airport','E34B': 'airport','E36': 'airport','E37': 'airport','E41': 'airport',
+    'E42': 'airport','E43': 'airport',
+    'H1': 'hk','H1A': 'hk','H2': 'hk',
+    '1P': 'hk','2X': 'hk','3A': 'hk','4': 'hk','5B': 'hk','5X': 'hk',
+    '6A': 'hk','6X': 'hk','7X': 'hk','8H': 'hk','8X': 'hk','8S': 'hk',
+    '9C': 'hk','10S': 'hk','11S': 'hk','12S': 'hk','13S': 'hk',
+    '14S': 'hk','15C': 'hk','19P': 'hk','23B': 'hk','23X': 'hk','25': 'hk',
+    '25A': 'hk','26': 'hk','27A': 'hk','28A': 'hk','30X': 'hk','31X': 'hk',
+    '37A': 'hk','37B': 'hk','37X': 'hk','38S': 'hk',
+    '40M': 'hk','40S': 'hk','41A': 'hk','43M': 'hk','46X': 'hk',
+    '47P': 'hk','48A': 'hk','49X': 'hk','56A': 'hk','56B': 'hk',
+    '66': 'hk','70': 'hk','70P': 'hk','71': 'hk','71P': 'hk',
+    '72A': 'hk','72S': 'hk','73P': 'hk','74': 'hk','75': 'hk','76': 'hk',
+    '77': 'hk','77P': 'hk','78A': 'hk','79': 'hk','79P': 'hk',
+    '81A': 'hk','81S': 'hk','82': 'hk','82M': 'hk','82S': 'hk',
+    '83': 'hk','84': 'hk','84S': 'hk','85S': 'hk','88R': 'hk',
+    '90': 'hk','90B': 'hk','91': 'hk','91A': 'hk','92': 'hk','93': 'hk',
+    '93C': 'hk','94': 'hk','94A': 'hk','95': 'hk','95C': 'hk','96': 'hk',
+    '97': 'hk','97A': 'hk','98': 'hk','99': 'hk','99B': 'hk',
+    '260': 'hk','262': 'hk','347': 'hk','595': 'hk',
+    '5S': 'hk','10X': 'hk','11A': 'hk','12M': 'hk'
+  };
+
+  function getRegion(routeNum) {
+    return REGION_MAP[routeNum] || 'nt';
+  }
+
+  function esc(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function buildRouteGrid() {
+    var grid = document.getElementById('route-grid');
+    var routes = filteredRoutes;
+
+    if (routes.length === 0) {
+      grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray-500);">' + LANG.t('no_results') + '</div>';
+      document.getElementById('route-count').textContent = '';
+      return;
+    }
+
+    var uniqueRoutes = {};
+    routes.forEach(function(r) {
+      if (!uniqueRoutes[r.route]) {
+        uniqueRoutes[r.route] = { route: r.route, bounds: {}, company: r.company, stops: {} };
+      }
+      uniqueRoutes[r.route].bounds[r.bound] = r;
+      uniqueRoutes[r.route].company = r.company || 'KMB';
+    });
+
+    var routeList = Object.keys(uniqueRoutes).sort(function(a, b) {
+      var aNum = parseInt(a), bNum = parseInt(b);
+      if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+      return a.localeCompare(b);
+    }).map(function(k) { return uniqueRoutes[k]; });
+
+    document.getElementById('route-count').textContent = LANG.t('routes_total', { n: routeList.length });
+
+    var h = '';
+    routeList.forEach(function(r) {
+      var boundO = r.bounds['O'];
+      var boundI = r.bounds['I'];
+      var dirText = '';
+      if (boundO && boundI) {
+        dirText = esc((boundO.orig_tc || '') + ' → ' + (boundO.dest_tc || '')) + '<br>' +
+                  esc((boundI.orig_tc || '') + ' → ' + (boundI.dest_tc || ''));
+      } else if (boundO) {
+        dirText = esc((boundO.orig_tc || '') + ' → ' + (boundO.dest_tc || ''));
+      } else if (boundI) {
+        dirText = esc((boundI.orig_tc || '') + ' → ' + (boundI.dest_tc || ''));
+      }
+      var isKMB = r.company !== 'LWB';
+
+      var stopCountO = (boundO && boundO.stops) ? boundO.stops.length : 0;
+      var stopCountI = (boundI && boundI.stops) ? boundI.stops.length : 0;
+
+      h += '<div class="route-card" data-route="' + esc(r.route) + '">' +
+        '<div class="route-card-header" onclick="this.closest(\'.route-card\').classList.toggle(\'expanded\')">' +
+          '<span class="route-card-number">' + esc(r.route) + '</span>' +
+          '<span class="route-badge ' + (isKMB ? 'kmb' : 'lwb') + '">' + (isKMB ? 'KMB' : 'LWB') + '</span>' +
+        '</div>' +
+        '<div class="route-card-direction">' + dirText + '</div>' +
+        '<div class="route-card-body">' +
+          '<div class="route-direction-toggle">' +
+            (boundO ? '<button class="route-dir-btn active" data-bound="O" onclick="event.stopPropagation();showRouteStops(this,\'' + esc(r.route) + '\',\'O\')">O 往 ' + esc(boundO.dest_tc || '') + '</button>' : '') +
+            (boundI ? '<button class="route-dir-btn" data-bound="I" onclick="event.stopPropagation();showRouteStops(this,\'' + esc(r.route) + '\',\'I\')">I 往 ' + esc(boundI.dest_tc || '') + '</button>' : '') +
+          '</div>' +
+          '<div class="route-stops" id="route-stops-' + esc(r.route) + '">' +
+            '<div style="padding:8px 0;color:var(--gray-400);font-size:0.8rem;">點擊方向按鈕顯示車站</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="route-card-footer">' +
+          '<a href="eta.html?route=' + esc(r.route) + '&bound=O" class="route-eta-link" data-i18n="view_eta">⏱ 查看到站</a>' +
+        '</div>' +
+      '</div>';
+    });
+    grid.innerHTML = h;
+  }
+
+  window.showRouteStops = function(btn, route, bound) {
+    var container = document.getElementById('route-stops-' + route);
+    if (!container) return;
+
+    var parent = btn.closest('.route-card');
+    parent.querySelectorAll('.route-dir-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+
+    var routeData = allRoutes.filter(function(r) { return r.route === route && r.bound === bound; });
+    if (routeData.length === 0 || !routeData[0].stops) {
+      container.innerHTML = '<div style="padding:8px 0;color:var(--gray-400);font-size:0.8rem;">無車站資料</div>';
+      return;
+    }
+    var stops = routeData[0].stops;
+    var h = '';
+    stops.forEach(function(s, i) {
+      h += '<div class="route-stop-row">' +
+        '<span class="route-stop-seq">' + (i + 1) + '.</span>' +
+        '<span class="route-stop-name">' + esc(s.name_tc || '') + '</span>' +
+      '</div>';
+    });
+    container.innerHTML = h;
+  };
+
+  function applyFilter() {
+    var searchActive = window._searchActive || false;
+    if (!searchActive) {
+      if (currentRegion === 'all') {
+        filteredRoutes = allRoutes;
+      } else {
+        filteredRoutes = allRoutes.filter(function(r) {
+          return getRegion(r.route) === currentRegion;
+        });
+      }
+    }
+    buildRouteGrid();
+  }
+
+  // Region filter pills
+  document.getElementById('filter-pills').addEventListener('click', function(e) {
+    var pill = e.target.closest('.filter-pill');
+    if (!pill) return;
+    document.querySelectorAll('.filter-pill').forEach(function(p) { p.classList.remove('active'); });
+    pill.classList.add('active');
+    currentRegion = pill.getAttribute('data-region');
+    window._searchActive = false;
+    applyFilter();
+  });
+
+  fetch('data/bus-routes-index.json').then(function(r) { return r.json(); }).then(function(data) {
+    allRoutes = data;
+    filteredRoutes = data;
+    buildRouteGrid();
+
+    if (typeof window.createSearch === 'function') {
+      window.createSearch({
+        container: '#search-container',
+        data: data,
+        fields: ['route', 'orig_tc', 'dest_tc', 'orig_en', 'dest_en'],
+        placeholder: '搜尋路線編號、起點、終點...',
+        onFilter: function(fd) {
+          if (fd.length === data.length) {
+            window._searchActive = false;
+            applyFilter();
+          } else {
+            window._searchActive = true;
+            filteredRoutes = fd;
+            buildRouteGrid();
+          }
+        }
+      });
+    }
+
+    document.getElementById('route-count').textContent = LANG.t('routes_total', { n: Object.keys(data.reduce(function(a,r){a[r.route]=1;return a;},{})).length });
+  }).catch(function() {
+    document.getElementById('route-grid').innerHTML = '<div class="error">⚠️ 載入路線資料失敗</div>';
+  });
+})();
+</script>
+</body>
+</html>

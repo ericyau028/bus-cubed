@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>香港巴士便利站 | 巴士地圖・路線・即時到站</title>
+  <meta name="description" content="香港巴士便利站 - 一站式巴士資訊平台，提供巴士路線目錄、車站地圖、即時到站時間查詢，涵蓋 KMB 九巴及 LWB 龍運巴士全港路線。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-132PFXDSM9"></script>
+  <script src="js/i18n.js" defer></script>
+  <script src="js/search.js" defer></script>
+  <script src="js/animations.js" defer></script>
+  <script src="js/main.js" defer></script>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="container">
+      <a href="#" data-lang="zh-Hant">繁體</a>
+      <a href="#" data-lang="zh-Hans">簡體</a>
+      <a href="#" data-lang="en">English</a>
+    </div>
+  </div>
+
+  <nav>
+    <div class="container">
+      <a href="index.html" class="nav-brand">🚌 香港<span>巴士站</span></a>
+      <button class="nav-toggle" aria-label="選單">☰</button>
+      <div class="nav-menu">
+        <a href="index.html" class="active"><span class="nav-icon">🏠</span> <span data-i18n="nav_home">首頁</span></a>
+        <a href="map.html"><span class="nav-icon">🗺️</span> <span data-i18n="nav_map">地圖</span></a>
+        <a href="list.html"><span class="nav-icon">📋</span> <span data-i18n="nav_list">列表</span></a>
+        <a href="routes.html"><span class="nav-icon">🚌</span> <span data-i18n="nav_routes">路線</span></a>
+        <a href="eta.html"><span class="nav-icon">⏱</span> <span data-i18n="nav_eta">到站</span></a>
+        <a href="fav.html"><span class="nav-icon">⭐</span> <span data-i18n="nav_bus_fav">常用</span></a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero-box reveal">
+    <div class="container">
+      <h1 data-i18n="hero_title">🚌 香港巴士便利站</h1>
+      <p data-i18n="hero_subtitle">一站式查閱巴士路線、地圖、即時到站時間</p>
+    </div>
+  </section>
+
+  <main class="container">
+    <h3 class="reveal-up" style="font-size:1rem;font-weight:700;color:var(--gray-700);margin:20px 0 8px;">🚌 巴士服務</h3>
+    <div class="box-net box-net-6 reveal-stagger">
+      <a href="map.html" class="box-card" style="--c:#2563eb;">
+        <div class="box-card-icon">🗺️</div>
+        <div class="box-card-title" data-i18n="box_map">巴士地圖</div>
+        <div class="box-card-desc" data-i18n="box_map_desc">6,742 個車站互動地圖</div>
+      </a>
+      <a href="list.html" class="box-card" style="--c:#059669;">
+        <div class="box-card-icon">📋</div>
+        <div class="box-card-title" data-i18n="box_list">車站列表</div>
+        <div class="box-card-desc" data-i18n="box_list_desc">按地區查閱巴士站</div>
+      </a>
+      <a href="routes.html" class="box-card" style="--c:#7c3aed;">
+        <div class="box-card-icon">🚌</div>
+        <div class="box-card-title" data-i18n="box_routes">路線目錄</div>
+        <div class="box-card-desc" data-i18n="box_routes_desc">瀏覽所有巴士路線</div>
+      </a>
+      <a href="eta.html" class="box-card" style="--c:#d97706;">
+        <div class="box-card-icon">⏱</div>
+        <div class="box-card-title" data-i18n="box_eta">即時到站</div>
+        <div class="box-card-desc" data-i18n="box_eta_desc">即時巴士到站時間</div>
+      </a>
+      <a href="fav.html" class="box-card" style="--c:#dc2626;">
+        <div class="box-card-icon">⭐</div>
+        <div class="box-card-title" data-i18n="box_fav">常用路線</div>
+        <div class="box-card-desc" data-i18n="box_fav_desc">儲存常用路線快速查看</div>
+      </a>
+    </div>
+
+    <div class="ad-placeholder" style="padding:0;border:none;background:transparent;">
+      <div style="text-align:center;color:var(--gray-400);font-size:0.8rem;padding:12px;">📢 Ad Space · <span data-i18n="ad_placeholder">廣告招商 — 請聯繫我們</span></div>
+    </div>
+
+    <section class="reveal-up" style="padding: 16px 0 24px;">
+      <h3 style="font-size:1.1rem; margin-bottom:12px; color:var(--gray-700);">💡 巴士小貼士</h3>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="background:var(--white);border-radius:8px;padding:12px 16px;box-shadow:var(--shadow-sm);font-size:0.9rem;">
+          <strong>🚌 查詢即時到站</strong> 搜尋路線編號（如 1A、968、E33），即可查看所有車站的預計到站時間
+        </div>
+        <div style="background:var(--white);border-radius:8px;padding:12px 16px;box-shadow:var(--shadow-sm);font-size:0.9rem;">
+          <strong>🗺️ 互動地圖</strong> 在地圖上查看 6,742 個巴士站位置，一鍵導航
+        </div>
+        <div style="background:var(--white);border-radius:8px;padding:12px 16px;box-shadow:var(--shadow-sm);font-size:0.9rem;">
+          <strong>⭐ 常用路線</strong> 將常搭的路線加入書籤，快速查看到站時間
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p data-i18n="footer_copyright">© 2026 香港巴士便利站 | 資料僅供參考，實際情況以現場為準</p>
+      <p style="font-size:0.75rem;color:var(--gray-400);margin-top:4px;" data-i18n="source_bus">資料來源：運輸署 巴士到站時間預報系統</p>
+      <div class="footer-links">
+        <a href="index.html" data-i18n="footer_home">首頁</a>
+        <a href="map.html" data-i18n="footer_map">🗺️ 地圖</a>
+        <a href="list.html" data-i18n="footer_list">📋 列表</a>
+        <a href="routes.html" data-i18n="footer_routes">🚌 路線</a>
+        <a href="eta.html" data-i18n="footer_eta">⏱ 到站</a>
+        <a href="fav.html" data-i18n="footer_fav">⭐ 常用</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
