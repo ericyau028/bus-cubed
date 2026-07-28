@@ -49,6 +49,15 @@
 .eta-typeahead-history-header{font-size:.7rem;color:var(--gray-400);padding:6px 14px 2px;font-weight:600;letter-spacing:.3px}
 .eta-history-remove{margin-left:8px;font-size:.65rem;color:var(--gray-400);cursor:pointer;padding:4px;min-width:28px;text-align:center;border-radius:4px}
 .eta-history-remove:hover{color:var(--red);background:#fef2f2}
+.eta-pin-btn{font-size:.85rem;cursor:pointer;margin-left:6px;opacity:.5;transition:opacity var(--transition);vertical-align:middle;display:inline-block}
+.eta-pin-btn:hover{opacity:1}
+.eta-quick-bar{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;min-height:28px}
+.eta-quick-chip{padding:4px 12px;border-radius:var(--radius-full);font-size:.78rem;font-weight:600;cursor:pointer;transition:all var(--transition);display:inline-flex;align-items:center;gap:4px;min-height:28px}
+.eta-quick-chip.pinned{background:var(--blue-light);color:var(--blue-dark);border:1px solid var(--blue)}
+.eta-quick-chip.history{background:var(--gray-100);color:var(--gray-600);border:1px solid var(--gray-200)}
+.eta-quick-chip:hover{transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+.eta-quick-chip .chip-pin{font-size:.55rem;opacity:.5}
+.eta-quick-chip.pinned .chip-pin{opacity:1;color:var(--blue)}
 .eta-refresh-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:.75rem;color:var(--gray-400)}
 .eta-refresh-btn{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-sm);padding:6px 14px;font-family:inherit;font-size:.75rem;font-weight:600;color:var(--gray-600);cursor:pointer;transition:all var(--transition)}
 .eta-refresh-btn:hover{background:var(--kraft-bg2);border-color:var(--kraft)}</style>
@@ -107,6 +116,7 @@
         </div>
       </div>
       <div class="eta-typeahead-suggestions" id="eta-suggestions"></div>
+      <div class="eta-quick-bar" id="eta-quick-bar"></div>
     </div>
 
     <div id="eta-content" style="display:none;">
@@ -160,6 +170,7 @@
   var currentBound = 'O';
   var refreshTimer = null;
   var searchHistory = JSON.parse(localStorage.getItem('eta_search_history') || '[]');
+  var pinnedRoutes = JSON.parse(localStorage.getItem('eta_pinned_routes') || '[]');
 
   var searchInput = document.getElementById('eta-search-input');
   var suggestions = document.getElementById('eta-suggestions');
@@ -232,11 +243,43 @@
     suggestions.classList.add('show');
   }
 
+  function renderQuickBar() {
+    var bar = document.getElementById('eta-quick-bar');
+    bar.innerHTML = '';
+    pinnedRoutes.forEach(function(r) {
+      bar.innerHTML += '<div class="eta-quick-chip pinned" onclick="selectRoute(\'' + esc(r) + '\')">' +
+        '<span class="chip-pin">📌</span>' + esc(r) + '</div>';
+    });
+    var shown = {}; pinnedRoutes.forEach(function(r) { shown[r] = true; });
+    var recentCount = 0;
+    searchHistory.forEach(function(r) {
+      if (shown[r]) return;
+      if (recentCount >= 5) return;
+      shown[r] = true; recentCount++;
+      bar.innerHTML += '<div class="eta-quick-chip history" onclick="selectRoute(\'' + esc(r) + '\')">' + esc(r) + '</div>';
+    });
+  }
+
+  function togglePin(route) {
+    var idx = pinnedRoutes.indexOf(route);
+    if (idx === -1) {
+      pinnedRoutes.unshift(route);
+    } else {
+      pinnedRoutes.splice(idx, 1);
+    }
+    if (pinnedRoutes.length > 10) pinnedRoutes.length = 10;
+    try { localStorage.setItem('eta_pinned_routes', JSON.stringify(pinnedRoutes)); } catch(e) {}
+    renderQuickBar();
+    var pinBtn = document.getElementById('eta-pin-btn');
+    if (pinBtn) pinBtn.textContent = pinnedRoutes.indexOf(route) !== -1 ? '📌' : '📌';
+  }
+
   function saveToHistory(route) {
     searchHistory = searchHistory.filter(function(r) { return r !== route; });
     searchHistory.unshift(route);
     if (searchHistory.length > 10) searchHistory.length = 10;
     try { localStorage.setItem('eta_search_history', JSON.stringify(searchHistory)); } catch(e) {}
+    renderQuickBar();
   }
 
   window.selectRoute = function(route) {
@@ -275,11 +318,15 @@
     etaDirToggle.innerHTML = dirHtml;
 
     var isKMB = routeData[0].company !== 'LWB';
-    etaRouteNumber.innerHTML = esc(route) + ' <span class="route-badge ' + (isKMB ? 'kmb' : 'lwb') + '">' + (isKMB ? 'KMB' : 'LWB') + '</span>';
+    var isPinned = pinnedRoutes.indexOf(route) !== -1;
+    etaRouteNumber.innerHTML = esc(route) + ' <span class="route-badge ' + (isKMB ? 'kmb' : 'lwb') + '">' + (isKMB ? 'KMB' : 'LWB') + '</span>' +
+      ' <span id="eta-pin-btn" class="eta-pin-btn" onclick="togglePin(\'' + esc(route) + '\')" title="' + (isPinned ? '取消固定' : '固定此路線') + '">' + (isPinned ? '📌' : '📌') + '</span>';
 
     var dirText = '';
     if (boundO) dirText = esc((boundO.orig_tc || '') + ' → ' + (boundO.dest_tc || ''));
     etaRouteDir.textContent = dirText;
+    var pinBtn = document.getElementById('eta-pin-btn');
+    if (pinBtn) pinBtn.setAttribute('onclick', 'togglePin(\'' + esc(route) + '\')');
 
     fetchETA(route, currentBound);
     startRefreshTimer(route);
@@ -405,6 +452,7 @@
 
   fetch('data/bus-routes-index.json').then(function(r) { return r.json(); }).then(function(data) {
     allRoutes = data;
+    renderQuickBar();
     var params = new URLSearchParams(window.location.search);
     var routeParam = params.get('route') || localStorage.getItem('eta_last_route');
     if (routeParam && allRoutes.some(function(r) { return r.route === routeParam; })) {
