@@ -24,7 +24,7 @@
 .fav-eta-label{font-weight:500;color:var(--gray-500);font-size:.75rem;min-width:48px}
 .fav-eta-value{font-weight:700;font-variant-numeric:tabular-nums}
 .fav-eta-value.green{color:var(--green)}.fav-eta-value.amber{color:var(--amber)}.fav-eta-value.red{color:var(--red)}.fav-eta-value.gray{color:var(--gray-400)}
-@keyframes eta-pulse{0%,100%{opacity:1}50%{opacity:.5}}.fav-eta-pulse{animation:eta-pulse 1.2s ease-in-out infinite}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}@keyframes shimmer{0%{background-position:-200% 0}to{background-position:200% 0}}@keyframes float{0%,to{transform:translateY(0)}50%{transform:translateY(-8px)}}@keyframes spin{to{transform:rotate(360deg)}}@keyframes eta-pulse{0%,100%{opacity:1}50%{opacity:.5}}.fav-eta-pulse{animation:eta-pulse 1.2s ease-in-out infinite}
 .fav-card-footer{display:flex;justify-content:space-between;align-items:center;padding:4px 16px 10px;font-size:.65rem;color:var(--gray-400)}
 .fav-card-remove{background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:.78rem;padding:6px 8px;border-radius:4px;transition:background var(--transition),color var(--transition);min-width:44px;min-height:44px;display:flex;align-items:center;gap:4px}
 .fav-card-remove:hover{background:#fef2f2;color:var(--red)}
