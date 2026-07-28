@@ -255,21 +255,26 @@
           // Sort by eta_seq ascending
           stopEtas.sort(function(a, b) { return (a.eta_seq || 99) - (b.eta_seq || 99); });
 
-          var etaText = '';
-          var etaClass = 'gray';
-          if (stopEtas.length > 0) {
-            var next = stopEtas[0];
-            var mins = Math.round((new Date(next.eta) - now) / 60000);
-            if (mins <= 0) { etaText = LANG.t('eta_due'); etaClass = 'red'; }
-            else if (mins <= 2) { etaText = LANG.t('eta_arriving'); etaClass = 'amber'; }
-            else { etaText = mins + ' ' + LANG.t('eta_min'); etaClass = 'green'; }
+          var etaHtml = '';
+          if (stopEtas.length === 0) {
+            etaHtml = '<span class="eta-stop-eta gray">' + LANG.t('eta_no_data') + '</span>';
+          } else {
+            var labels = [LANG.t('eta_next'), LANG.t('eta_following'), LANG.t('eta_third')];
+            stopEtas.slice(0, 3).forEach(function(e, j) {
+              var mins = Math.round((new Date(e.eta) - now) / 60000);
+              var cls = 'green';
+              var text;
+              if (mins <= 0) { cls = 'red'; text = LANG.t('eta_due'); }
+              else if (mins <= 2) { cls = 'amber'; text = LANG.t('eta_arriving'); }
+              else { text = mins + ' ' + LANG.t('eta_min'); }
+              etaHtml += '<div class="eta-stop-bus"><span class="eta-stop-label">' + labels[j] + '</span><span class="eta-stop-eta ' + cls + '">' + text + '</span></div>';
+            });
           }
-          if (!etaText) etaText = LANG.t('eta_no_data');
 
           h += '<div class="eta-stop-row">' +
             '<span class="eta-stop-seq">' + (i + 1) + '.</span>' +
             '<span class="eta-stop-name">' + esc(s.name_tc || '') + '</span>' +
-            '<span class="eta-stop-eta ' + etaClass + '">' + etaText + '</span>' +
+            '<span class="eta-stop-times">' + etaHtml + '</span>' +
           '</div>';
         });
         etaStopList.innerHTML = h;

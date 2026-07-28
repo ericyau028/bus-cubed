@@ -1135,6 +1135,32 @@ nav.nav-shrunk .nav-brand {
 .eta-stop-eta.red { color: var(--red); }
 .eta-stop-eta.gray { color: var(--gray-400); }
 
+.eta-stop-times {
+  text-align: right;
+  min-width: 80px;
+}
+
+.eta-stop-bus {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.eta-stop-bus .eta-stop-eta {
+  font-size: 0.8rem;
+  min-width: auto;
+}
+
+.eta-stop-label {
+  color: var(--gray-400);
+  font-size: 0.7rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
 .eta-skeleton-row {
   display: flex;
   align-items: center;
