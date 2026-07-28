@@ -108,8 +108,7 @@
       renderETA(etaArea, state.etaCache[key], true);
     }
 
-    var url = 'https://data.etabus.gov.hk/v1/transport/kmb/eta/' +
-      encodeURIComponent(fav.stop_id) + '/' +
+    var url = 'https://data.etabus.gov.hk/v1/transport/kmb/route-eta/' +
       encodeURIComponent(fav.route) + '/1';
 
     var spinEl = card.querySelector('.fav-refresh-icon');
@@ -122,8 +121,9 @@
         .then(function(r) { return r.json(); })
         .then(function(data) {
           var etas = (data && data.data) || [];
-          var filtered = etas.filter(function(e) { return e.dir === fav.bound; });
-          if (filtered.length === 0) filtered = etas;
+          var filtered = etas.filter(function(e) {
+            return e.dir === fav.bound && String(e.seq) === String(fav.stop_seq);
+          });
           state.etaCache[key] = { data: filtered, ts: Date.now() };
           try { localStorage.setItem('bus_eta_cache', JSON.stringify(state.etaCache)); } catch(e) {}
           renderETA(etaArea, filtered, false);
