@@ -115,35 +115,34 @@
     var spinEl = card.querySelector('.fav-refresh-icon');
     if (spinEl) spinEl.classList.add('fav-refresh-spin');
 
-    // Safety timeout: replace skeleton after 15s even if fetch hangs
-    var safetyTimer = setTimeout(function() {
-      if (etaArea.querySelector('.fav-eta-skeleton')) {
-        etaArea.innerHTML = '<div class="fav-eta-row"><span class="fav-eta-value gray">⚠️ 無法取得到站時間</span></div>';
-      }
-    }, 15000);
+    var retries = 0;
 
-    fetch(url)
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        clearTimeout(safetyTimer);
-        var etas = (data && data.data) || [];
-        var filtered = etas.filter(function(e) { return e.dir === fav.bound; });
-        if (filtered.length === 0) filtered = etas;
-        state.etaCache[key] = { data: filtered, ts: Date.now() };
-        try { localStorage.setItem('bus_eta_cache', JSON.stringify(state.etaCache)); } catch(e) {}
-        renderETA(etaArea, filtered, false);
-        var lu = card.querySelector('.fav-last-update');
-        if (lu) { lu.textContent = LANG.t('bus_fav_just_now'); lu.classList.add('fav-updated-now'); }
-      })
-      .catch(function() {
-        clearTimeout(safetyTimer);
-        if (!state.etaCache[key]) {
-          renderETAError(etaArea);
-        }
-      })
-      .finally(function() {
-        if (spinEl) spinEl.classList.remove('fav-refresh-spin');
-      });
+    function doFetch() {
+      fetch(url)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          var etas = (data && data.data) || [];
+          var filtered = etas.filter(function(e) { return e.dir === fav.bound; });
+          if (filtered.length === 0) filtered = etas;
+          state.etaCache[key] = { data: filtered, ts: Date.now() };
+          try { localStorage.setItem('bus_eta_cache', JSON.stringify(state.etaCache)); } catch(e) {}
+          renderETA(etaArea, filtered, false);
+          var lu = card.querySelector('.fav-last-update');
+          if (lu) { lu.textContent = LANG.t('bus_fav_just_now'); lu.classList.add('fav-updated-now'); }
+          if (spinEl) spinEl.classList.remove('fav-refresh-spin');
+        })
+        .catch(function() {
+          if (retries < 2 && !state.etaCache[key]) {
+            retries++;
+            setTimeout(doFetch, 2000);
+          } else if (!state.etaCache[key]) {
+            renderETAError(etaArea);
+          }
+          if (spinEl) spinEl.classList.remove('fav-refresh-spin');
+        });
+    }
+
+    doFetch();
   }
 
   function renderETA(el, etas, isStale) {

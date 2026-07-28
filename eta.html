@@ -46,6 +46,9 @@
 .eta-typeahead-sug:last-child{border-bottom:none}
 .eta-typeahead-sug-num{font-weight:700;font-size:1rem}
 .eta-typeahead-sug-dir{font-size:.72rem;color:var(--gray-500)}
+.eta-typeahead-history-header{font-size:.7rem;color:var(--gray-400);padding:6px 14px 2px;font-weight:600;letter-spacing:.3px}
+.eta-history-remove{margin-left:8px;font-size:.65rem;color:var(--gray-400);cursor:pointer;padding:4px;min-width:28px;text-align:center;border-radius:4px}
+.eta-history-remove:hover{color:var(--red);background:#fef2f2}
 .eta-refresh-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:.75rem;color:var(--gray-400)}
 .eta-refresh-btn{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-sm);padding:6px 14px;font-family:inherit;font-size:.75rem;font-weight:600;color:var(--gray-600);cursor:pointer;transition:all var(--transition)}
 .eta-refresh-btn:hover{background:var(--kraft-bg2);border-color:var(--kraft)}</style>
@@ -156,6 +159,7 @@
   var currentRoute = null;
   var currentBound = 'O';
   var refreshTimer = null;
+  var searchHistory = JSON.parse(localStorage.getItem('eta_search_history') || '[]');
 
   var searchInput = document.getElementById('eta-search-input');
   var suggestions = document.getElementById('eta-suggestions');
@@ -174,9 +178,34 @@
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
+  function renderSuggestionItems(items, showRemove) {
+    return items.slice(0, 10).map(function(route) {
+      var r = allRoutes.filter(function(x) { return x.route === route; })[0];
+      if (!r) return '';
+      var dir = (r.orig_tc || '') + ' → ' + (r.dest_tc || '');
+      var removeBtn = showRemove ? '<span class="eta-history-remove" onclick="event.stopPropagation();removeHistory(\'' + esc(route) + '\')">✕</span>' : '';
+      return '<div class="eta-typeahead-sug" onclick="selectRoute(\'' + esc(r.route) + '\')">' +
+        '<span><span class="eta-typeahead-sug-num">' + esc(r.route) + '</span><br><span class="eta-typeahead-sug-dir">' + esc(dir) + '</span></span>' +
+        '<span class="route-badge ' + ((r.company || 'KMB') === 'KMB' ? 'kmb' : 'lwb') + '">' + (r.company || 'KMB') + '</span>' + removeBtn +
+      '</div>';
+    }).join('');
+  }
+
+  window.removeHistory = function(route) {
+    searchHistory = searchHistory.filter(function(r) { return r !== route; });
+    try { localStorage.setItem('eta_search_history', JSON.stringify(searchHistory)); } catch(e) {}
+    handleSearchInput(searchInput.value);
+  };
+
+  function showHistory() {
+    if (searchHistory.length === 0) return;
+    suggestions.innerHTML = '<div class="eta-typeahead-history-header">最近查詢</div>' + renderSuggestionItems(searchHistory, true);
+    suggestions.classList.add('show');
+  }
+
   function handleSearchInput(val) {
     clearBtn.style.display = val ? '' : 'none';
-    if (!val.trim()) { suggestions.classList.remove('show'); return; }
+    if (!val.trim()) { showHistory(); return; }
     var q = val.trim().toLowerCase();
     var matches = [];
     var seen = {};
@@ -187,19 +216,34 @@
       }
     });
     if (matches.length === 0) { suggestions.classList.remove('show'); return; }
-    suggestions.innerHTML = matches.slice(0, 10).map(function(r) {
+    // Mix history matches at top
+    var histMatches = searchHistory.filter(function(h) { return h.toLowerCase().indexOf(q) !== -1; });
+    var histHtml = histMatches.length > 0
+      ? '<div class="eta-typeahead-history-header">最近查詢</div>' + renderSuggestionItems(histMatches, true)
+      : '';
+    var sugHtml = matches.slice(0, 10).map(function(r) {
       var dir = (r.orig_tc || '') + ' → ' + (r.dest_tc || '');
       return '<div class="eta-typeahead-sug" onclick="selectRoute(\'' + esc(r.route) + '\')">' +
         '<span><span class="eta-typeahead-sug-num">' + esc(r.route) + '</span><br><span class="eta-typeahead-sug-dir">' + esc(dir) + '</span></span>' +
         '<span class="route-badge ' + ((r.company || 'KMB') === 'KMB' ? 'kmb' : 'lwb') + '">' + (r.company || 'KMB') + '</span>' +
       '</div>';
     }).join('');
+    suggestions.innerHTML = histHtml + sugHtml;
     suggestions.classList.add('show');
+  }
+
+  function saveToHistory(route) {
+    searchHistory = searchHistory.filter(function(r) { return r !== route; });
+    searchHistory.unshift(route);
+    if (searchHistory.length > 10) searchHistory.length = 10;
+    try { localStorage.setItem('eta_search_history', JSON.stringify(searchHistory)); } catch(e) {}
   }
 
   window.selectRoute = function(route) {
     searchInput.value = route;
     suggestions.classList.remove('show');
+    saveToHistory(route);
+    try { localStorage.setItem('eta_last_route', route); } catch(e) {}
     loadRoute(route);
   };
 
@@ -348,7 +392,10 @@
     if (refreshTimer) clearInterval(refreshTimer);
     etaContent.style.display = 'none'; etaEmpty.style.display = '';
   });
-  searchInput.addEventListener('focus', function() { if (this.value.trim()) handleSearchInput(this.value); });
+  searchInput.addEventListener('focus', function() {
+    if (this.value.trim()) { handleSearchInput(this.value); } else { showHistory(); }
+  });
+  searchInput.addEventListener('blur', function() { setTimeout(function() { suggestions.classList.remove('show'); }, 200); });
   document.getElementById('eta-manual-refresh').addEventListener('click', function() {
     if (currentRoute) fetchETA(currentRoute, currentBound);
   });
@@ -359,8 +406,8 @@
   fetch('data/bus-routes-index.json').then(function(r) { return r.json(); }).then(function(data) {
     allRoutes = data;
     var params = new URLSearchParams(window.location.search);
-    var routeParam = params.get('route');
-    if (routeParam) {
+    var routeParam = params.get('route') || localStorage.getItem('eta_last_route');
+    if (routeParam && allRoutes.some(function(r) { return r.route === routeParam; })) {
       searchInput.value = routeParam;
       loadRoute(routeParam);
       var boundParam = params.get('bound');
