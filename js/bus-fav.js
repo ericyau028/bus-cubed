@@ -1,9 +1,6 @@
 (function() {
   'use strict';
 
-  // ETA fetched directly from KMB API (CORS supported: Access-Control-Allow-Origin: *)
-
-  // ===== State =====
   var state = {
     items: [],
     etaCache: {},
@@ -17,12 +14,10 @@
     step: 1
   };
 
-  // ===== Init =====
   function init() {
     state.items = JSON.parse(localStorage.getItem('bus_favorites') || '[]');
     state.etaCache = JSON.parse(localStorage.getItem('bus_eta_cache') || '{}');
 
-    // Load route + stop data
     Promise.all([
       fetch('../data/bus-routes-index.json').then(function(r) { return r.json(); }),
       fetch('../data/bus-stops-index.json').then(function(r) { return r.json(); })
@@ -35,7 +30,6 @@
     });
   }
 
-  // ===== Render =====
   function render() {
     if (state.items.length === 0) {
       showEmpty();
@@ -59,7 +53,6 @@
     if (!state.timer) startTimestampUpdater();
   }
 
-  // ===== Build Cards =====
   function buildCards() {
     var grid = document.getElementById('fav-grid');
     grid.innerHTML = '';
@@ -103,7 +96,6 @@
     return card;
   }
 
-  // ===== ETA Fetch =====
   function fetchETA(index) {
     var fav = state.items[index];
     if (!fav) return;
@@ -112,7 +104,6 @@
     var etaArea = card.querySelector('.fav-card-eta');
     var key = fav.route + '_' + fav.bound + '_' + fav.stop_seq;
 
-    // Show cache first
     if (state.etaCache[key]) {
       renderETA(etaArea, state.etaCache[key], true);
     }
@@ -124,11 +115,20 @@
     var spinEl = card.querySelector('.fav-refresh-icon');
     if (spinEl) spinEl.classList.add('fav-refresh-spin');
 
+    // Safety timeout: replace skeleton after 15s even if fetch hangs
+    var safetyTimer = setTimeout(function() {
+      if (etaArea.querySelector('.fav-eta-skeleton')) {
+        etaArea.innerHTML = '<div class="fav-eta-row"><span class="fav-eta-value gray">⚠️ 無法取得到站時間</span></div>';
+      }
+    }, 15000);
+
     fetch(url)
       .then(function(r) { return r.json(); })
       .then(function(data) {
+        clearTimeout(safetyTimer);
         var etas = (data && data.data) || [];
         var filtered = etas.filter(function(e) { return e.dir === fav.bound; });
+        if (filtered.length === 0) filtered = etas;
         state.etaCache[key] = { data: filtered, ts: Date.now() };
         try { localStorage.setItem('bus_eta_cache', JSON.stringify(state.etaCache)); } catch(e) {}
         renderETA(etaArea, filtered, false);
@@ -136,6 +136,7 @@
         if (lu) { lu.textContent = LANG.t('bus_fav_just_now'); lu.classList.add('fav-updated-now'); }
       })
       .catch(function() {
+        clearTimeout(safetyTimer);
         if (!state.etaCache[key]) {
           renderETAError(etaArea);
         }
@@ -145,7 +146,6 @@
       });
   }
 
-  // ===== Render ETA =====
   function renderETA(el, etas, isStale) {
     var now = new Date();
     var upcoming = etas.filter(function(e) {
@@ -184,19 +184,16 @@
     '</div>';
   }
 
-  // ===== Intervals =====
   function startIntervals() {
-    // Clear old intervals
     Object.keys(state.intervals).forEach(function(k) { clearInterval(state.intervals[k]); });
     state.intervals = {};
 
     state.items.forEach(function(fav, i) {
       var key = fav.route + '_' + fav.bound + '_' + fav.stop_id;
-      var offset = (i * 5000) % 30000;
+      var offset = (i * 5000) % 10000;
       state.intervals[key] = setInterval(function() {
         fetchETA(i);
-      }, 30000);
-      // First refresh at staggered offset
+      }, 10000);
       setTimeout(function() { fetchETA(i); }, offset);
     });
   }
@@ -221,7 +218,6 @@
     }, 10000);
   }
 
-  // ===== Add / Remove =====
   window.FAV_add = function(route, bound, stopId, stopName, stopSeq, routeOrig, routeDest, company) {
     var dup = state.items.some(function(f) {
       return f.route === route && f.stop_id === stopId;
@@ -255,7 +251,6 @@
     state.items.splice(index, 1);
     save();
     if (state.items.length === 0) { showEmpty(); return; }
-    // Rebuild all cards (indices change)
     buildCards();
   };
 
@@ -270,7 +265,6 @@
     try { localStorage.setItem('bus_favorites', JSON.stringify(state.items)); } catch(e) {}
   }
 
-  // ===== Modal Wizard =====
   window.FAV_openModal = function() {
     state.step = 1;
     state.selectedRoute = null;
@@ -330,7 +324,6 @@
       return;
     }
     if (state.step === 3) {
-      // Save all selected stops
       state.selectedStops.forEach(function(stop) {
         window.FAV_add(
           state.selectedRoute.route,
@@ -353,7 +346,6 @@
     showStep(state.step - 1);
   };
 
-  // ===== Route Search =====
   window.FAV_searchRoute = function(val) {
     var sug = document.getElementById('fav-route-suggestions');
     if (!val.trim()) { sug.classList.remove('show'); return; }
@@ -361,7 +353,6 @@
     var matches = [];
     state.routes.forEach(function(r) {
       if (r.route.toLowerCase().indexOf(q) !== -1) {
-        // Only add one entry per route (show O bound)
         if (!matches.some(function(m) { return m.route === r.route; })) {
           matches.push(r);
         }
@@ -385,7 +376,6 @@
     document.getElementById('fav-route-input').value = route + ' ' + origTc + ' → ' + destTc;
     document.getElementById('fav-route-suggestions').classList.remove('show');
 
-    // Find both bounds (O/I) for this route to show as direction options
     var dirs = state.routes.filter(function(r) { return r.route === route; });
     var bounds = {};
     dirs.forEach(function(r) { bounds[r.bound] = r; });
@@ -412,7 +402,6 @@
     showStep(2);
   };
 
-  // ===== Direction Select =====
   window.FAV_selectDirection = function(bound) {
     if (state.selectedRoute) state.selectedRoute.bound = bound;
     document.querySelectorAll('.fav-dir-btn').forEach(function(b) {
@@ -430,7 +419,6 @@
     var container = document.getElementById('fav-stop-container');
     container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray-500);">載入車站中...</div>';
 
-    // Find stops for this route+bound from routes index
     var routeData = state.routes.filter(function(x) {
       return x.route === r.route && x.bound === r.bound;
     });
@@ -483,7 +471,6 @@
     updateStepBtns();
   }
 
-  // ===== Stop search =====
   window.FAV_searchStops = function(val) {
     var items = document.querySelectorAll('#fav-stop-list .fav-stop-item');
     var q = val.trim().toLowerCase();
@@ -493,18 +480,14 @@
     });
   };
 
-  // ===== Lang change =====
   document.addEventListener('langchange', function() {
-    // Update page text
     if (state.items.length === 0) {
       document.querySelector('[data-i18n="bus_fav_empty_title"]');
     }
   });
 
-  // ===== Init on DOM ready =====
   document.addEventListener('DOMContentLoaded', init);
 
-  // ===== Utility =====
   function esc(s) {
     if (!s) return '';
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');

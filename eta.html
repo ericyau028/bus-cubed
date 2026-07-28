@@ -329,7 +329,7 @@
     if (refreshTimer) clearInterval(refreshTimer);
     refreshTimer = setInterval(function() {
       if (currentRoute) fetchETA(currentRoute, currentBound);
-    }, 30000);
+    }, 10000);
   }
 
   searchInput.addEventListener('input', function() { handleSearchInput(this.value); });
