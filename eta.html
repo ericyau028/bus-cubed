@@ -13,7 +13,7 @@
   <script src="js/main.js" defer></script>
   <script src="js/i18n.js" defer></script>
   <script src="js/animations.js" defer></script>
-  <script src="js/eta.js" defer></script>
+  <!-- js/eta.js intentionally omitted: inline script below handles ETA with 3-bus display, direction toggle, and search -->
 </head>
 <body>
   <div class="top-bar">
@@ -293,6 +293,15 @@
   }
 
   searchInput.addEventListener('input', function() { handleSearchInput(this.value); });
+  searchInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      var first = suggestions.querySelector('.eta-typeahead-sug');
+      if (first) { first.click(); return; }
+      var val = this.value.trim();
+      if (val) selectRoute(val.toUpperCase());
+    }
+  });
   clearBtn.addEventListener('click', function() {
     searchInput.value = ''; clearBtn.style.display = 'none';
     suggestions.classList.remove('show');
