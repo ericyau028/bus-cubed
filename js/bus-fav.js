@@ -128,7 +128,7 @@
       .then(function(r) { return r.json(); })
       .then(function(data) {
         var etas = (data && data.data) || [];
-        var filtered = etas.filter(function(e) { return e.stop === fav.stop_id; });
+        var filtered = etas.filter(function(e) { return e.dir === fav.bound; });
         state.etaCache[key] = { data: filtered, ts: Date.now() };
         try { localStorage.setItem('bus_eta_cache', JSON.stringify(state.etaCache)); } catch(e) {}
         renderETA(etaArea, filtered, false);
