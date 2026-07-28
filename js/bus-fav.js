@@ -72,15 +72,14 @@
 
     var isKMB = fav.company !== 'LWB';
     var routeDir = (fav.route_orig_tc || '') + ' → ' + (fav.route_dest_tc || '');
+    var stopName = (fav.stop_name_tc || '').replace(/\s*\([^)]*\)$/, '');
 
     card.innerHTML =
       '<div class="fav-card-header">' +
-        '<span class="fav-route"><span class="fav-route-icon">🚌</span>' + esc(fav.route) + '</span>' +
+        '<span class="fav-route"><span class="fav-route-icon">🚌</span>' + esc(fav.route) + ' <small class="fav-route-dir">' + esc(routeDir) + '</small></span>' +
         '<span class="fav-badge ' + (isKMB ? 'kmb' : 'lwb') + '">' + (isKMB ? 'KMB' : 'LWB') + '</span>' +
       '</div>' +
-      '<div class="fav-card-direction">' + esc(routeDir) + '</div>' +
-      '<hr class="fav-card-divider">' +
-      '<div class="fav-card-stop">🚏 ' + esc(fav.stop_name_tc || '') + ' <span class="fav-stop-id">#' + esc(fav.stop_id) + '</span></div>' +
+      '<div class="fav-card-stop">🚏 ' + esc(stopName) + ' <span class="fav-stop-id">#' + esc(fav.stop_id) + '</span></div>' +
       '<div class="fav-card-eta" data-index="' + index + '">' +
         '<div class="fav-eta-skeleton"></div>' +
         '<div class="fav-eta-skeleton" style="width:70px;margin-top:4px;"></div>' +
