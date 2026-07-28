@@ -105,7 +105,7 @@
     var key = fav.route + '_' + fav.bound + '_' + fav.stop_seq;
 
     if (state.etaCache[key]) {
-      renderETA(etaArea, state.etaCache[key], true);
+      renderETA(etaArea, state.etaCache[key].data, true);
     }
 
     var url = 'https://data.etabus.gov.hk/v1/transport/kmb/eta/' +
@@ -146,7 +146,7 @@
             if (tryNum < 2) { setTimeout(function() { doFetch(tryNum + 1); }, 2000); }
             else if (!loaded) { renderETAError(etaArea); if (spinEl) spinEl.classList.remove('fav-refresh-spin'); }
           } else if (!loaded) {
-            renderETA(etaArea, state.etaCache[key], true);
+            renderETA(etaArea, state.etaCache[key].data, true);
             if (spinEl) spinEl.classList.remove('fav-refresh-spin');
           }
         });
@@ -199,11 +199,9 @@
 
     state.items.forEach(function(fav, i) {
       var key = fav.route + '_' + fav.bound + '_' + fav.stop_id;
-      var offset = (i * 5000) % 10000;
       state.intervals[key] = setInterval(function() {
         fetchETA(i);
       }, 10000);
-      setTimeout(function() { fetchETA(i); }, offset);
     });
   }
 
@@ -241,12 +239,18 @@
     save();
     if (state.items.length === 1) render();
     else {
+      var newIndex = state.items.length - 1;
       var grid = document.getElementById('fav-grid');
-      var card = createCard(state.items[state.items.length - 1], state.items.length - 1);
+      var card = createCard(state.items[newIndex], newIndex);
       grid.appendChild(card);
+      var fav = state.items[newIndex];
+      var ikey = fav.route + '_' + fav.bound + '_' + fav.stop_id;
+      state.intervals[ikey] = setInterval(function() {
+        fetchETA(newIndex);
+      }, 10000);
       setTimeout(function() {
         card.classList.add('revealed');
-        fetchETA(state.items.length - 1);
+        fetchETA(newIndex);
       }, 100);
     }
     return true;
@@ -255,12 +259,11 @@
   window.FAV_remove = function(index) {
     var fav = state.items[index];
     if (!fav) return;
-    var key = fav.route + '_' + fav.bound + '_' + fav.stop_id;
-    if (state.intervals[key]) { clearInterval(state.intervals[key]); delete state.intervals[key]; }
     state.items.splice(index, 1);
     save();
     if (state.items.length === 0) { showEmpty(); return; }
     buildCards();
+    startIntervals();
   };
 
   window.FAV_retry = function(btn) {
