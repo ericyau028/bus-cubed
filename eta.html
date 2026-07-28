@@ -260,7 +260,7 @@
     });
   }
 
-  function togglePin(route) {
+  window.togglePin = function(route) {
     var idx = pinnedRoutes.indexOf(route);
     if (idx === -1) {
       pinnedRoutes.unshift(route);
@@ -272,6 +272,7 @@
     renderQuickBar();
     var pinBtn = document.getElementById('eta-pin-btn');
     if (pinBtn) pinBtn.textContent = pinnedRoutes.indexOf(route) !== -1 ? '📌' : '📌';
+    if (pinBtn) pinBtn.setAttribute('title', pinnedRoutes.indexOf(route) !== -1 ? '取消固定' : '固定此路線');
   }
 
   function saveToHistory(route) {
