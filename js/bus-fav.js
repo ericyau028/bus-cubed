@@ -83,11 +83,11 @@
       '<div class="fav-card-eta" data-index="' + index + '">' +
         '<div class="fav-eta-skeleton"></div>' +
         '<div class="fav-eta-skeleton" style="width:70px;margin-top:4px;"></div>' +
+        '<div class="fav-eta-skeleton" style="width:50px;margin-top:4px;"></div>' +
       '</div>' +
       '<div class="fav-card-footer">' +
         '<span class="fav-last-update"></span>' +
         '<div>' +
-          '<span class="fav-refresh-icon" style="font-size:0.7rem;margin-right:6px;">⟳</span>' +
           '<button class="fav-card-remove" onclick="FAV_remove(' + index + ')" title="移除">✕ ' + LANG.t('bus_fav_remove') + '</button>' +
         '</div>' +
       '</div>';
@@ -111,19 +111,15 @@
       encodeURIComponent(fav.stop_id) + '/' +
       encodeURIComponent(fav.route) + '/1';
 
-    var spinEl = card.querySelector('.fav-refresh-icon');
-    if (spinEl) spinEl.classList.add('fav-refresh-spin');
-
     var loaded = false;
     setTimeout(function() {
       if (!loaded) {
         renderETAError(etaArea, true);
-        if (spinEl) spinEl.classList.remove('fav-refresh-spin');
       }
     }, 8000);
 
     function doFetch(tryNum) {
-      if (tryNum > 2) { if (!loaded) renderETAError(etaArea); if (spinEl) spinEl.classList.remove('fav-refresh-spin'); return; }
+      if (tryNum > 2) { if (!loaded) renderETAError(etaArea); return; }
       fetch(url)
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -138,15 +134,13 @@
           renderETA(etaArea, filtered, false);
           var lu = card.querySelector('.fav-last-update');
           if (lu) { lu.textContent = LANG.t('bus_fav_just_now'); lu.classList.add('fav-updated-now'); }
-          if (spinEl) spinEl.classList.remove('fav-refresh-spin');
         })
         .catch(function() {
           if (!state.etaCache[key]) {
             if (tryNum < 2) { setTimeout(function() { doFetch(tryNum + 1); }, 2000); }
-            else if (!loaded) { renderETAError(etaArea); if (spinEl) spinEl.classList.remove('fav-refresh-spin'); }
+            else if (!loaded) { renderETAError(etaArea); }
           } else if (!loaded) {
             renderETA(etaArea, state.etaCache[key].data, true);
-            if (spinEl) spinEl.classList.remove('fav-refresh-spin');
           }
         });
     }
