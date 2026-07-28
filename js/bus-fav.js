@@ -115,40 +115,44 @@
     var spinEl = card.querySelector('.fav-refresh-icon');
     if (spinEl) spinEl.classList.add('fav-refresh-spin');
 
-    var retries = 0;
-    var safetyTimer = setTimeout(function() {
-      if (etaArea.querySelector('.fav-eta-skeleton')) {
-        etaArea.innerHTML = '<div class="fav-eta-row"><span class="fav-eta-value gray">⚠️ 無法取得到站時間</span></div>';
+    var loaded = false;
+    setTimeout(function() {
+      if (!loaded) {
+        renderETAError(etaArea, true);
+        if (spinEl) spinEl.classList.remove('fav-refresh-spin');
       }
-    }, 15000);
+    }, 8000);
 
-    function doFetch() {
+    function doFetch(tryNum) {
+      if (tryNum > 2) { if (!loaded) renderETAError(etaArea); if (spinEl) spinEl.classList.remove('fav-refresh-spin'); return; }
       fetch(url)
         .then(function(r) { return r.json(); })
         .then(function(data) {
-          clearTimeout(safetyTimer);
+          if (loaded) return;
+          loaded = true;
           var etas = (data && data.data) || [];
           var filtered = etas.filter(function(e) { return e.dir === fav.bound; });
-          state.etaCache[key] = { data: filtered, ts: Date.now() };
-          try { localStorage.setItem('bus_eta_cache', JSON.stringify(state.etaCache)); } catch(e) {}
+          if (filtered.length > 0 || !state.etaCache[key]) {
+            state.etaCache[key] = { data: filtered, ts: Date.now() };
+            try { localStorage.setItem('bus_eta_cache', JSON.stringify(state.etaCache)); } catch(e) {}
+          }
           renderETA(etaArea, filtered, false);
           var lu = card.querySelector('.fav-last-update');
           if (lu) { lu.textContent = LANG.t('bus_fav_just_now'); lu.classList.add('fav-updated-now'); }
           if (spinEl) spinEl.classList.remove('fav-refresh-spin');
         })
         .catch(function() {
-          clearTimeout(safetyTimer);
-          if (retries < 2 && !state.etaCache[key]) {
-            retries++;
-            setTimeout(doFetch, 2000);
-          } else if (!state.etaCache[key]) {
-            renderETAError(etaArea);
+          if (!state.etaCache[key]) {
+            if (tryNum < 2) { setTimeout(function() { doFetch(tryNum + 1); }, 2000); }
+            else if (!loaded) { renderETAError(etaArea); if (spinEl) spinEl.classList.remove('fav-refresh-spin'); }
+          } else if (!loaded) {
+            renderETA(etaArea, state.etaCache[key], true);
+            if (spinEl) spinEl.classList.remove('fav-refresh-spin');
           }
-          if (spinEl) spinEl.classList.remove('fav-refresh-spin');
         });
     }
 
-    doFetch();
+    doFetch(0);
   }
 
   function renderETA(el, etas, isStale) {
@@ -182,9 +186,9 @@
     el.innerHTML = html;
   }
 
-  function renderETAError(el) {
+  function renderETAError(el, isTimeout) {
     el.innerHTML = '<div class="fav-eta-row" style="justify-content:space-between;">' +
-      '<span class="fav-eta-value gray">⚠️ ' + LANG.t('bus_fav_error') + '</span>' +
+      '<span class="fav-eta-value gray">⚠️ ' + (isTimeout ? '連線逾時' : LANG.t('bus_fav_error')) + '</span>' +
       '<button class="fav-card-retry" onclick="FAV_retry(this)">🔄 ' + LANG.t('bus_fav_retry') + '</button>' +
     '</div>';
   }
