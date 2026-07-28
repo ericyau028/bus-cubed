@@ -9,6 +9,46 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <!-- inline ETA styles to prevent unstyled flash due to GitHub Pages CDN cache -->
+  <style>:root{--kraft:#c4956a;--kraft-dark:#a67c54;--kraft-light:#e8c9a0;--kraft-bg:#faf6f1;--kraft-bg2:#f5ede3;--blue:#2563eb;--blue-dark:#1d4ed8;--blue-light:#dbeafe;--green:#059669;--green-dark:#047857;--green-light:#d1fae5;--purple:#7c3aed;--red:#dc2626;--amber:#d97706;--skyblue:#0ea5e9;--accent:#2563eb;--white:#fff;--gray-50:#faf8f6;--gray-100:#f0ede8;--gray-200:#e0dcd4;--gray-300:#c5c0b6;--gray-400:#9e9a94;--gray-500:#7a7670;--gray-600:#5c5852;--gray-700:#3d3a35;--gray-800:#262420;--gray-900:#141310;--shadow-sm:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);--shadow:0 4px 12px rgba(0,0,0,0.08),0 2px 4px rgba(0,0,0,0.04);--shadow-lg:0 12px 28px rgba(0,0,0,0.1),0 4px 12px rgba(0,0,0,0.06);--shadow-xl:0 20px 48px rgba(0,0,0,0.12),0 8px 24px rgba(0,0,0,0.08);--radius:12px;--radius-sm:8px;--radius-lg:16px;--radius-full:9999px;--max-width:480px;--font-sans:'Noto Sans TC',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;--transition:0.25s cubic-bezier(0.4,0,0.2,1);--transition-slow:0.4s cubic-bezier(0.4,0,0.2,1)}
+.eta-route-info{background:var(--white);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:20px;margin-bottom:16px;text-align:center}
+.eta-route-number{font-size:2.4rem;font-weight:800;color:var(--gray-900);letter-spacing:1px}
+.eta-route-dir{font-size:.85rem;color:var(--gray-500);margin:6px 0}
+.eta-route-stops-count{font-size:.78rem;color:var(--gray-400);margin-top:4px}
+.eta-direction-toggle{display:flex;gap:8px;margin:12px 0}
+.eta-dir-btn{flex:1;padding:10px 16px;border:2px solid var(--gray-200);border-radius:var(--radius);font-family:inherit;font-size:.85rem;font-weight:600;cursor:pointer;transition:all var(--transition);background:var(--white);color:var(--gray-600);min-height:44px}
+.eta-dir-btn:hover{border-color:var(--kraft)}
+.eta-dir-btn.active{background:var(--blue-light);border-color:var(--blue);color:var(--blue-dark)}
+.eta-stop-list{display:flex;flex-direction:column;gap:8px;padding:8px 0 24px}
+.eta-stop-row{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:14px 16px;display:flex;align-items:center;gap:12px;border-left:3px solid var(--gray-200);transition:box-shadow var(--transition)}
+.eta-stop-row:hover{box-shadow:var(--shadow)}
+.eta-stop-seq{font-size:.7rem;color:var(--gray-400);min-width:26px;font-weight:600}
+.eta-stop-name{flex:1;font-size:.9rem;font-weight:600;color:var(--gray-800)}
+.eta-stop-eta{font-size:.85rem;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;min-width:60px;text-align:right}
+.eta-stop-eta.green{color:var(--green)}
+.eta-stop-eta.amber{color:var(--amber)}
+.eta-stop-eta.red{color:var(--red)}
+.eta-stop-eta.gray{color:var(--gray-400)}
+.eta-stop-times{text-align:right;min-width:80px}
+.eta-stop-bus{display:flex;justify-content:flex-end;align-items:center;gap:6px;font-size:.8rem;line-height:1.6}
+.eta-stop-bus .eta-stop-eta{font-size:.8rem;min-width:auto}
+.eta-stop-label{color:var(--gray-400);font-size:.7rem;font-weight:500;white-space:nowrap}
+.eta-skeleton-row{display:flex;align-items:center;gap:12px;padding:14px 16px}
+.eta-skeleton-seq{width:26px;height:12px;border-radius:4px;background:linear-gradient(90deg,var(--gray-100) 25%,var(--gray-200) 50%,var(--gray-100) 75%);background-size:200% 100%;animation:skeleton-loading 1.5s infinite}
+.eta-skeleton-name{flex:1;height:14px;border-radius:4px;background:linear-gradient(90deg,var(--gray-100) 25%,var(--gray-200) 50%,var(--gray-100) 75%);background-size:200% 100%;animation:skeleton-loading 1.5s infinite}
+.eta-skeleton-eta{width:60px;height:14px;border-radius:4px;background:linear-gradient(90deg,var(--gray-100) 25%,var(--gray-200) 50%,var(--gray-100) 75%);background-size:200% 100%;animation:skeleton-loading 1.5s infinite}
+@keyframes skeleton-loading{0%{background-position:200% 0}to{background-position:-200% 0}}
+.eta-typeahead{position:relative;margin-bottom:16px}
+.eta-typeahead-suggestions{position:absolute;top:100%;left:0;right:0;background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-sm);box-shadow:var(--shadow-lg);max-height:240px;overflow-y:auto;z-index:10;display:none}
+.eta-typeahead-suggestions.show{display:block}
+.eta-typeahead-sug{padding:10px 14px;cursor:pointer;font-size:.88rem;border-bottom:1px solid var(--gray-100);transition:background var(--transition);display:flex;justify-content:space-between;align-items:center}
+.eta-typeahead-sug:hover{background:var(--kraft-bg2)}
+.eta-typeahead-sug:last-child{border-bottom:none}
+.eta-typeahead-sug-num{font-weight:700;font-size:1rem}
+.eta-typeahead-sug-dir{font-size:.72rem;color:var(--gray-500)}
+.eta-refresh-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:.75rem;color:var(--gray-400)}
+.eta-refresh-btn{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-sm);padding:6px 14px;font-family:inherit;font-size:.75rem;font-weight:600;color:var(--gray-600);cursor:pointer;transition:all var(--transition)}
+.eta-refresh-btn:hover{background:var(--kraft-bg2);border-color:var(--kraft)}</style>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-132PFXDSM9"></script>
   <script src="js/main.js" defer></script>
   <script src="js/i18n.js" defer></script>
