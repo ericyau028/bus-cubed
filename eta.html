@@ -112,12 +112,10 @@
 (function() {
   'use strict';
 
-  var CORS_PROXY = 'https://corsproxy.io/?';
   var allRoutes = [];
   var currentRoute = null;
   var currentBound = 'O';
   var refreshTimer = null;
-  var etaDataCache = {};
 
   var searchInput = document.getElementById('eta-search-input');
   var suggestions = document.getElementById('eta-suggestions');
@@ -138,10 +136,7 @@
 
   function handleSearchInput(val) {
     clearBtn.style.display = val ? '' : 'none';
-    if (!val.trim()) {
-      suggestions.classList.remove('show');
-      return;
-    }
+    if (!val.trim()) { suggestions.classList.remove('show'); return; }
     var q = val.trim().toLowerCase();
     var matches = [];
     var seen = {};
@@ -151,10 +146,7 @@
         matches.push(r);
       }
     });
-    if (matches.length === 0) {
-      suggestions.classList.remove('show');
-      return;
-    }
+    if (matches.length === 0) { suggestions.classList.remove('show'); return; }
     suggestions.innerHTML = matches.slice(0, 10).map(function(r) {
       var dir = (r.orig_tc || '') + ' → ' + (r.dest_tc || '');
       return '<div class="eta-typeahead-sug" onclick="selectRoute(\'' + esc(r.route) + '\')">' +
@@ -189,7 +181,6 @@
     var boundO = routeData.filter(function(r) { return r.bound === 'O'; })[0];
     var boundI = routeData.filter(function(r) { return r.bound === 'I'; })[0];
 
-    // Build direction toggle
     var dirHtml = '';
     if (boundO) {
       dirHtml += '<button class="eta-dir-btn active" data-bound="O" onclick="switchDirection(\'O\')">O 往 ' + esc(boundO.dest_tc || '') + '</button>';
@@ -216,18 +207,15 @@
     document.querySelectorAll('.eta-dir-btn').forEach(function(b) {
       b.classList.toggle('active', b.getAttribute('data-bound') === bound);
     });
-
     var routeData = allRoutes.filter(function(r) { return r.route === currentRoute && r.bound === bound; });
     if (routeData.length > 0) {
       var rd = routeData[0];
       etaRouteDir.textContent = esc((rd.orig_tc || '') + ' → ' + (rd.dest_tc || ''));
     }
-
     etaStopList.innerHTML = '';
     for (var i = 0; i < 5; i++) {
       etaStopList.innerHTML += '<div class="eta-skeleton-row"><div class="skeleton eta-skeleton-seq"></div><div class="skeleton eta-skeleton-name"></div><div class="skeleton eta-skeleton-eta"></div></div>';
     }
-
     fetchETA(currentRoute, bound);
     startRefreshTimer(currentRoute);
   };
@@ -242,87 +230,80 @@
     var stops = routeData[0].stops;
     etaStopsCount.textContent = LANG.t('eta_stops', { n: stops.length });
 
-    // Fetch ETA for each stop
-    var promises = stops.map(function(s) {
-      var url = 'https://data.etabus.gov.hk/v1/transport/kmb/eta/' +
-        encodeURIComponent(route) + '/' +
-        encodeURIComponent(bound) + '/' +
-        encodeURIComponent(s.seq);
-      return fetch(CORS_PROXY + encodeURIComponent(url))
-        .then(function(r) { return r.json(); })
-        .then(function(d) { return { seq: s.seq, stop_id: s.stop_id, name_tc: s.name_tc, data: (d && d.data) || [] }; })
-        .catch(function() { return { seq: s.seq, stop_id: s.stop_id, name_tc: s.name_tc, data: [] }; });
-    });
+    // Use Route ETA API for all stops in one call
+    var url = 'https://data.etabus.gov.hk/v1/transport/kmb/route-eta/' +
+      encodeURIComponent(route) + '/1';
 
-    Promise.all(promises).then(function(results) {
-      var now = new Date();
-      var h = '';
-      results.forEach(function(r, i) {
-        var etas = r.data.filter(function(e) { return e.stop === r.stop_id && e.t && new Date(e.t) > now; }).slice(0, 1);
-        var etaText = '';
-        var etaClass = 'gray';
-        if (etas.length > 0) {
-          var mins = Math.round((new Date(etas[0].t) - now) / 60000);
-          if (mins <= 0) { etaText = LANG.t('eta_due'); etaClass = 'red'; }
-          else if (mins <= 2) { etaText = LANG.t('eta_arriving'); etaClass = 'amber'; }
-          else { etaText = mins + ' ' + LANG.t('eta_min'); etaClass = 'green'; }
-        } else {
-          etaText = LANG.t('eta_no_data');
-        }
-        h += '<div class="eta-stop-row">' +
-          '<span class="eta-stop-seq">' + (i + 1) + '.</span>' +
-          '<span class="eta-stop-name">' + esc(r.name_tc || '') + '</span>' +
-          '<span class="eta-stop-eta ' + etaClass + '">' + etaText + '</span>' +
-        '</div>';
+    fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var allEta = (data && data.data) || [];
+        // Filter by direction (dir = O or I)
+        allEta = allEta.filter(function(e) { return e.dir === bound; });
+        // Build map by seq (Route ETA has seq, not stop_id)
+        var etaMap = {};
+        allEta.forEach(function(e) {
+          var seq = String(e.seq);
+          if (!etaMap[seq]) etaMap[seq] = [];
+          etaMap[seq].push(e);
+        });
+
+        var now = new Date();
+        var h = '';
+        stops.forEach(function(s, i) {
+          var stopEtas = (etaMap[String(s.seq)] || []).filter(function(e) { return e.eta; });
+          // Sort by eta_seq ascending
+          stopEtas.sort(function(a, b) { return (a.eta_seq || 99) - (b.eta_seq || 99); });
+
+          var etaText = '';
+          var etaClass = 'gray';
+          if (stopEtas.length > 0) {
+            var next = stopEtas[0];
+            var mins = Math.round((new Date(next.eta) - now) / 60000);
+            if (mins <= 0) { etaText = LANG.t('eta_due'); etaClass = 'red'; }
+            else if (mins <= 2) { etaText = LANG.t('eta_arriving'); etaClass = 'amber'; }
+            else { etaText = mins + ' ' + LANG.t('eta_min'); etaClass = 'green'; }
+          }
+          if (!etaText) etaText = LANG.t('eta_no_data');
+
+          h += '<div class="eta-stop-row">' +
+            '<span class="eta-stop-seq">' + (i + 1) + '.</span>' +
+            '<span class="eta-stop-name">' + esc(s.name_tc || '') + '</span>' +
+            '<span class="eta-stop-eta ' + etaClass + '">' + etaText + '</span>' +
+          '</div>';
+        });
+        etaStopList.innerHTML = h;
+        etaRefreshTimestamp.textContent = LANG.t('eta_just_now') + ' (' + now.toLocaleTimeString() + ')';
+      })
+      .catch(function() {
+        etaStopList.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray-500);">⚠️ 無法取得到站時間</div>';
       });
-      etaStopList.innerHTML = h;
-      etaRefreshTimestamp.textContent = LANG.t('eta_just_now') + ' (' + now.toLocaleTimeString() + ')';
-    });
   }
 
   function startRefreshTimer(route) {
     if (refreshTimer) clearInterval(refreshTimer);
     refreshTimer = setInterval(function() {
-      if (currentRoute) {
-        fetchETA(currentRoute, currentBound);
-      }
+      if (currentRoute) fetchETA(currentRoute, currentBound);
     }, 30000);
   }
 
-  searchInput.addEventListener('input', function() {
-    handleSearchInput(this.value);
-  });
-
+  searchInput.addEventListener('input', function() { handleSearchInput(this.value); });
   clearBtn.addEventListener('click', function() {
-    searchInput.value = '';
-    clearBtn.style.display = 'none';
+    searchInput.value = ''; clearBtn.style.display = 'none';
     suggestions.classList.remove('show');
     if (refreshTimer) clearInterval(refreshTimer);
-    etaContent.style.display = 'none';
-    etaEmpty.style.display = '';
+    etaContent.style.display = 'none'; etaEmpty.style.display = '';
   });
-
-  searchInput.addEventListener('focus', function() {
-    if (this.value.trim()) handleSearchInput(this.value);
-  });
-
+  searchInput.addEventListener('focus', function() { if (this.value.trim()) handleSearchInput(this.value); });
   document.getElementById('eta-manual-refresh').addEventListener('click', function() {
-    if (currentRoute) {
-      fetchETA(currentRoute, currentBound);
-    }
+    if (currentRoute) fetchETA(currentRoute, currentBound);
   });
-
   document.addEventListener('click', function(e) {
-    if (!e.target.closest('.eta-typeahead')) {
-      suggestions.classList.remove('show');
-    }
+    if (!e.target.closest('.eta-typeahead')) suggestions.classList.remove('show');
   });
 
-  // Load route data
   fetch('data/bus-routes-index.json').then(function(r) { return r.json(); }).then(function(data) {
     allRoutes = data;
-
-    // Check URL params
     var params = new URLSearchParams(window.location.search);
     var routeParam = params.get('route');
     if (routeParam) {
