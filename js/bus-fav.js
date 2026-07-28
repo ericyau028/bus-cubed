@@ -108,22 +108,27 @@
       renderETA(etaArea, state.etaCache[key], true);
     }
 
-    var url = 'https://data.etabus.gov.hk/v1/transport/kmb/route-eta/' +
+    var url = 'https://data.etabus.gov.hk/v1/transport/kmb/eta/' +
+      encodeURIComponent(fav.stop_id) + '/' +
       encodeURIComponent(fav.route) + '/1';
 
     var spinEl = card.querySelector('.fav-refresh-icon');
     if (spinEl) spinEl.classList.add('fav-refresh-spin');
 
     var retries = 0;
+    var safetyTimer = setTimeout(function() {
+      if (etaArea.querySelector('.fav-eta-skeleton')) {
+        etaArea.innerHTML = '<div class="fav-eta-row"><span class="fav-eta-value gray">⚠️ 無法取得到站時間</span></div>';
+      }
+    }, 15000);
 
     function doFetch() {
       fetch(url)
         .then(function(r) { return r.json(); })
         .then(function(data) {
+          clearTimeout(safetyTimer);
           var etas = (data && data.data) || [];
-          var filtered = etas.filter(function(e) {
-            return e.dir === fav.bound && String(e.seq) === String(fav.stop_seq);
-          });
+          var filtered = etas.filter(function(e) { return e.dir === fav.bound; });
           state.etaCache[key] = { data: filtered, ts: Date.now() };
           try { localStorage.setItem('bus_eta_cache', JSON.stringify(state.etaCache)); } catch(e) {}
           renderETA(etaArea, filtered, false);
@@ -132,6 +137,7 @@
           if (spinEl) spinEl.classList.remove('fav-refresh-spin');
         })
         .catch(function() {
+          clearTimeout(safetyTimer);
           if (retries < 2 && !state.etaCache[key]) {
             retries++;
             setTimeout(doFetch, 2000);
