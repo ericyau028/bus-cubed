@@ -173,9 +173,6 @@
         '</div>';
       });
     }
-    if (isStale && upcoming.length > 0) {
-      html += '<div style="font-size:0.65rem;color:var(--gray-400);margin-top:2px;">(' + LANG.t('bus_fav_cached') + ')</div>';
-    }
     el.innerHTML = html;
   }
 
