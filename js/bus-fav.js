@@ -11,7 +11,9 @@
     selectedRoute: null,
     selectedBound: null,
     selectedStops: [],
-    step: 1
+    step: 1,
+    manageMode: false,
+    dragId: null
   };
 
   function init() {
@@ -42,12 +44,17 @@
     document.getElementById('fav-empty').style.display = '';
     document.getElementById('fav-dashboard').style.display = 'none';
     document.getElementById('fav-fab').style.display = '';
+    state.manageMode = false;
+    var mb = document.getElementById('fav-manage-btn');
+    if (mb) mb.style.display = 'none';
   }
 
   function showDashboard() {
     document.getElementById('fav-empty').style.display = 'none';
     document.getElementById('fav-dashboard').style.display = '';
     document.getElementById('fav-fab').style.display = '';
+    var mb = document.getElementById('fav-manage-btn');
+    if (mb) mb.style.display = state.items.length > 0 ? '' : 'none';
     buildCards();
     startIntervals();
     if (!state.timer) startTimestampUpdater();
@@ -83,12 +90,12 @@
       '<div class="fav-card-eta" data-index="' + index + '">' +
         '<div class="fav-eta-skeleton"></div>' +
         '<div class="fav-eta-skeleton" style="width:70px;margin-top:4px;"></div>' +
-        '<div class="fav-eta-skeleton" style="width:50px;margin-top:4px;"></div>' +
       '</div>' +
       '<div class="fav-card-footer">' +
         '<span class="fav-last-update"></span>' +
-        '<div>' +
-          '<button class="fav-card-remove" onclick="FAV_remove(' + index + ')" title="移除">✕ ' + LANG.t('bus_fav_remove') + '</button>' +
+        '<div class="fav-card-manage-controls">' +
+          '<button class="fav-card-remove" onclick="FAV_remove(' + index + ')" title="' + LANG.t('bus_fav_remove') + '" style="display:none;">✕ ' + LANG.t('bus_fav_remove') + '</button>' +
+          '<button class="fav-card-drag" title="' + LANG.t('bus_fav_drag') + '" style="display:none;">⠿</button>' +
         '</div>' +
       '</div>';
 
@@ -229,6 +236,8 @@
     save();
     if (state.items.length === 1) render();
     else {
+      var mb = document.getElementById('fav-manage-btn');
+      if (mb) mb.style.display = '';
       var newIndex = state.items.length - 1;
       var grid = document.getElementById('fav-grid');
       var card = createCard(state.items[newIndex], newIndex);
@@ -255,6 +264,94 @@
     buildCards();
     startIntervals();
   };
+
+  window.FAV_toggleManage = function() {
+    state.manageMode = !state.manageMode;
+    var btn = document.getElementById('fav-manage-btn');
+    if (btn) btn.classList.toggle('manage-active', state.manageMode);
+    var label = document.getElementById('fav-manage-label');
+    if (label) label.textContent = state.manageMode ? LANG.t('bus_fav_manage_done') : LANG.t('bus_fav_manage');
+    updateManageMode();
+  };
+
+  function updateManageMode() {
+    var grid = document.getElementById('fav-grid');
+    if (!grid) return;
+    var cards = grid.querySelectorAll('.fav-card');
+    cards.forEach(function(card) {
+      var idx = parseInt(card.getAttribute('data-index'));
+      var removeBtn = card.querySelector('.fav-card-remove');
+      var dragBtn = card.querySelector('.fav-card-drag');
+      var isLast = state.items.length <= 1;
+      if (state.manageMode) {
+        card.classList.add('manage-mode');
+        if (removeBtn) removeBtn.style.display = 'flex';
+        if (dragBtn) { dragBtn.style.display = 'flex'; dragBtn.disabled = isLast; }
+        card.setAttribute('draggable', 'true');
+        card.addEventListener('dragstart', onDragStart);
+        card.addEventListener('dragover', onDragOver);
+        card.addEventListener('dragleave', onDragLeave);
+        card.addEventListener('drop', onDrop);
+        card.addEventListener('dragend', onDragEnd);
+      } else {
+        card.classList.remove('manage-mode');
+        if (removeBtn) removeBtn.style.display = 'none';
+        if (dragBtn) dragBtn.style.display = 'none';
+        card.removeAttribute('draggable');
+        card.removeEventListener('dragstart', onDragStart);
+        card.removeEventListener('dragover', onDragOver);
+        card.removeEventListener('dragleave', onDragLeave);
+        card.removeEventListener('drop', onDrop);
+        card.removeEventListener('dragend', onDragEnd);
+      }
+    });
+  }
+
+  function onDragStart(e) {
+    var card = e.target.closest ? e.target.closest('.fav-card') : null;
+    if (!card) return;
+    state.dragId = card.getAttribute('data-index');
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', state.dragId); } catch (err) {}
+  }
+  function onDragOver(e) {
+    if (state.manageMode && e.preventDefault) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      var card = e.target.closest ? e.target.closest('.fav-card') : null;
+      if (card) card.classList.add('drag-over');
+    }
+  }
+  function onDragLeave(e) {
+    var card = e.target.closest ? e.target.closest('.fav-card') : null;
+    if (card) card.classList.remove('drag-over');
+  }
+  function onDrop(e) {
+    if (e.preventDefault) e.preventDefault();
+    var target = e.target.closest ? e.target.closest('.fav-card') : null;
+    if (!target || state.dragId === null) return;
+    var fromIdx = parseInt(state.dragId, 10);
+    var toIdx = parseInt(target.getAttribute('data-index'), 10);
+    if (fromIdx !== toIdx && fromIdx >= 0 && toIdx >= 0 && fromIdx < state.items.length && toIdx < state.items.length) {
+      var item = state.items.splice(fromIdx, 1)[0];
+      state.items.splice(toIdx, 0, item);
+      save();
+      buildCards();
+      startIntervals();
+      updateManageMode();
+    }
+    state.dragId = null;
+  }
+  function onDragEnd(e) {
+    var card = e.target.closest ? e.target.closest('.fav-card') : null;
+    if (card) card.classList.remove('dragging');
+    var grid = document.getElementById('fav-grid');
+    if (grid) {
+      grid.querySelectorAll('.drag-over').forEach(function(el) { el.classList.remove('drag-over'); });
+    }
+    state.dragId = null;
+  }
 
   window.FAV_retry = function(btn) {
     var card = btn.closest('.fav-card');

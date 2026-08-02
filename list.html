@@ -9,6 +9,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#c4956a">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
     .item-list { overflow: hidden; transition: max-height 0.3s ease; }
     .item-list.collapsed { max-height: 0 !important; }
@@ -214,6 +217,16 @@
     document.getElementById('list-container').innerHTML='<div class="error">載入失敗</div>';
   });
 })();
+</script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('sw.js').catch(function(err) {
+        console.warn('SW registration failed:', err);
+      });
+    });
+  }
 </script>
 </body>
 </html>
