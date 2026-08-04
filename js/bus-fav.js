@@ -90,6 +90,7 @@
       '<div class="fav-card-eta" data-index="' + index + '">' +
         '<div class="fav-eta-skeleton"></div>' +
         '<div class="fav-eta-skeleton" style="width:70px;margin-top:4px;"></div>' +
+        '<div class="fav-eta-skeleton" style="width:50px;margin-top:4px;"></div>' +
       '</div>' +
       '<div class="fav-card-footer">' +
         '<span class="fav-last-update"></span>' +
@@ -98,6 +99,13 @@
           '<button class="fav-card-drag" title="' + LANG.t('bus_fav_drag') + '" style="display:none;">⠿</button>' +
         '</div>' +
       '</div>';
+
+    card.addEventListener('click', function(e) {
+      if (state.manageMode) return;
+      var btn = e.target.closest ? e.target.closest('button') : null;
+      if (btn) return;
+      this.classList.toggle('expanded');
+    });
 
     return card;
   }
@@ -502,7 +510,17 @@
   };
 
   window.FAV_selectDirection = function(bound) {
-    if (state.selectedRoute) state.selectedRoute.bound = bound;
+    if (state.selectedRoute) {
+      state.selectedRoute.bound = bound;
+      // Update orig/dest from the selected bound's route data so card shows correct direction
+      var dir = state.routes.filter(function(r) {
+        return r.route === state.selectedRoute.route && r.bound === bound;
+      })[0];
+      if (dir) {
+        state.selectedRoute.orig_tc = dir.orig_tc || state.selectedRoute.orig_tc;
+        state.selectedRoute.dest_tc = dir.dest_tc || state.selectedRoute.dest_tc;
+      }
+    }
     document.querySelectorAll('.fav-dir-btn').forEach(function(b) {
       if (b.getAttribute('data-bound') === bound) {
         b.classList.add('selected');
