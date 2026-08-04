@@ -104,11 +104,43 @@
       if (state.manageMode) return;
       var btn = e.target.closest ? e.target.closest('button') : null;
       if (btn) return;
-      this.classList.toggle('expanded');
+      FAV_openExpand(parseInt(this.getAttribute('data-index'), 10));
     });
 
     return card;
   }
+
+  window.FAV_openExpand = function(index) {
+    var fav = state.items[index];
+    if (!fav) return;
+    var overlay = document.getElementById('fav-expand-overlay');
+    if (!overlay) return;
+    var isKMB = fav.company !== 'LWB';
+    var routeDir = (fav.route_orig_tc || '') + ' → ' + (fav.route_dest_tc || '');
+    var stopName = (fav.stop_name_tc || '').replace(/\s*\([^)]*\)$/, '');
+    var panel = overlay.querySelector('.fav-expand-panel');
+    panel.setAttribute('data-index', index);
+    panel.innerHTML =
+      '<button class="fav-expand-close" onclick="FAV_closeExpand()">✕</button>' +
+      '<div class="fav-expand-header">' +
+        '<span class="fav-expand-route">🚌 ' + esc(fav.route) + ' <small>' + esc(routeDir) + '</small></span>' +
+        '<span class="fav-badge ' + (isKMB ? 'kmb' : 'lwb') + '">' + (isKMB ? 'KMB' : 'LWB') + '</span>' +
+      '</div>' +
+      '<div class="fav-expand-stop">🚏 ' + esc(stopName) + ' <span class="fav-stop-id">#' + esc(fav.stop_id) + '</span></div>' +
+      '<div class="fav-expand-eta" data-index="' + index + '">' +
+        '<div class="fav-eta-skeleton"></div>' +
+        '<div class="fav-eta-skeleton" style="width:70px;margin-top:4px;"></div>' +
+        '<div class="fav-eta-skeleton" style="width:50px;margin-top:4px;"></div>' +
+      '</div>' +
+      '<div class="fav-expand-footer"><span class="fav-last-update"></span></div>';
+    overlay.classList.add('open');
+    fetchETA(index);
+  };
+
+  window.FAV_closeExpand = function() {
+    var overlay = document.getElementById('fav-expand-overlay');
+    if (overlay) overlay.classList.remove('open');
+  };
 
   function fetchETA(index) {
     var fav = state.items[index];
@@ -120,6 +152,7 @@
 
     if (state.etaCache[key]) {
       renderETA(etaArea, state.etaCache[key].data, true);
+      syncExpandETA(index, state.etaCache[key].data, true);
     }
 
     var url = 'https://data.etabus.gov.hk/v1/transport/kmb/eta/' +
@@ -130,11 +163,12 @@
     setTimeout(function() {
       if (!loaded) {
         renderETAError(etaArea, true);
+        syncExpandETAError(index);
       }
     }, 8000);
 
     function doFetch(tryNum) {
-      if (tryNum > 2) { if (!loaded) renderETAError(etaArea); return; }
+      if (tryNum > 2) { if (!loaded) { renderETAError(etaArea); syncExpandETAError(index); } return; }
       fetch(url)
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -147,15 +181,19 @@
             try { localStorage.setItem('bus_eta_cache', JSON.stringify(state.etaCache)); } catch(e) {}
           }
           renderETA(etaArea, filtered, false);
+          syncExpandETA(index, filtered, false);
           var lu = card.querySelector('.fav-last-update');
           if (lu) { lu.textContent = LANG.t('bus_fav_just_now'); lu.classList.add('fav-updated-now'); }
+          var elu = getExpandLastUpdate(index);
+          if (elu) { elu.textContent = LANG.t('bus_fav_just_now'); elu.classList.add('fav-updated-now'); }
         })
         .catch(function() {
           if (!state.etaCache[key]) {
             if (tryNum < 2) { setTimeout(function() { doFetch(tryNum + 1); }, 2000); }
-            else if (!loaded) { renderETAError(etaArea); }
+            else if (!loaded) { renderETAError(etaArea); syncExpandETAError(index); }
           } else if (!loaded) {
             renderETA(etaArea, state.etaCache[key].data, true);
+            syncExpandETA(index, state.etaCache[key].data, true);
           }
         });
     }
@@ -198,6 +236,29 @@
     '</div>';
   }
 
+  function getExpandEtaArea(index) {
+    var overlay = document.getElementById('fav-expand-overlay');
+    if (!overlay || !overlay.classList.contains('open')) return null;
+    var panel = overlay.querySelector('.fav-expand-panel');
+    if (!panel || panel.getAttribute('data-index') !== String(index)) return null;
+    return panel.querySelector('.fav-expand-eta');
+  }
+  function getExpandLastUpdate(index) {
+    var overlay = document.getElementById('fav-expand-overlay');
+    if (!overlay || !overlay.classList.contains('open')) return null;
+    var panel = overlay.querySelector('.fav-expand-panel');
+    if (!panel || panel.getAttribute('data-index') !== String(index)) return null;
+    return panel.querySelector('.fav-last-update');
+  }
+  function syncExpandETA(index, etas, isStale) {
+    var el = getExpandEtaArea(index);
+    if (el) renderETA(el, etas, isStale);
+  }
+  function syncExpandETAError(index) {
+    var el = getExpandEtaArea(index);
+    if (el) renderETAError(el);
+  }
+
   function startIntervals() {
     Object.keys(state.intervals).forEach(function(k) { clearInterval(state.intervals[k]); });
     state.intervals = {};
@@ -224,6 +285,11 @@
           if (el) {
             if (secs < 5) el.textContent = LANG.t('bus_fav_just_now');
             else el.textContent = LANG.t('bus_fav_last_update', { n: secs });
+          }
+          var elu = getExpandLastUpdate(idx);
+          if (elu) {
+            if (secs < 5) elu.textContent = LANG.t('bus_fav_just_now');
+            else elu.textContent = LANG.t('bus_fav_last_update', { n: secs });
           }
         }
       });
@@ -362,9 +428,15 @@
   }
 
   window.FAV_retry = function(btn) {
+    var idx = null;
     var card = btn.closest('.fav-card');
-    if (!card) return;
-    var idx = parseInt(card.getAttribute('data-index'));
+    if (card) {
+      idx = parseInt(card.getAttribute('data-index'));
+    } else {
+      var panel = btn.closest('.fav-expand-panel');
+      if (panel) idx = parseInt(panel.getAttribute('data-index'));
+    }
+    if (idx === null || isNaN(idx)) return;
     fetchETA(idx);
   };
 
@@ -603,7 +675,20 @@
     }
   });
 
-  document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('DOMContentLoaded', function() {
+    init();
+    var expandOverlay = document.getElementById('fav-expand-overlay');
+    if (expandOverlay) {
+      expandOverlay.addEventListener('click', function(e) {
+        if (e.target === expandOverlay) FAV_closeExpand();
+      });
+      document.addEventListener('keydown', function(ev) {
+        if (ev.key === 'Escape' && expandOverlay.classList.contains('open')) {
+          FAV_closeExpand();
+        }
+      });
+    }
+  });
 
   function esc(s) {
     if (!s) return '';
