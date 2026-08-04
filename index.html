@@ -17,6 +17,8 @@
   <script src="js/search.js" defer></script>
   <script src="js/animations.js" defer></script>
   <script src="js/main.js" defer></script>
+  <script>window.TRAFFIC_LANG = { title: '🚨 特別交通消息', loading: '載入特別交通消息...' };</script>
+  <script src="js/traffic-news.js" defer></script>
 </head>
 <body>
   <div class="top-bar">
@@ -50,6 +52,7 @@
   </section>
 
   <main class="container">
+    <div id="traffic-news" class="traffic-news" style="display:none;"></div>
     <h3 class="reveal-up" style="font-size:1rem;font-weight:700;color:var(--gray-700);margin:20px 0 8px;">🚌 巴士服務</h3>
     <div class="box-net box-net-6 reveal-stagger">
       <a href="map.html" class="box-card" style="--c:#2563eb;">

@@ -1361,3 +1361,37 @@ nav.nav-shrunk .nav-brand {
   .footer-links { gap: 4px 10px; }
   footer { padding: 24px 14px 20px; }
 }
+
+/* ===== Special Traffic News banner ===== */
+.traffic-news {
+  margin: 10px 0;
+}
+.traffic-news-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+.traffic-news-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+.traffic-news-body { flex: 1; min-width: 0; }
+.traffic-news-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #9a3412;
+  margin-bottom: 4px;
+}
+.traffic-news-list {
+  margin: 0;
+  padding-left: 16px;
+  color: #7c2d12;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+.traffic-news-list li { margin-bottom: 3px; }

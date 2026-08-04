@@ -101,6 +101,8 @@
 @media(max-width:639px){.fav-manage-bar{font-size:.7rem}}</style>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-132PFXDSM9"></script>
   <script src="js/main.js" defer></script>
+  <script>window.TRAFFIC_LANG = { title: '🚨 特別交通消息', loading: '載入特別交通消息...' };</script>
+  <script src="js/traffic-news.js" defer></script>
   <script src="js/i18n.js" defer></script>
   <script src="js/animations.js" defer></script>
   <script src="js/bus-fav.js" defer></script>
@@ -139,6 +141,7 @@
   </section>
 
   <main class="container">
+    <div id="traffic-news" class="traffic-news" style="display:none;"></div>
     <div class="ad-placeholder" style="padding:0;border:none;background:transparent;">
       <div style="text-align:center;color:var(--gray-400);font-size:0.8rem;padding:12px;">📢 Ad Space · <span data-i18n="ad_placeholder">廣告招商 — 請聯繫我們</span></div>
     </div>

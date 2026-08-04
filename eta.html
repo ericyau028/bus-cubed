@@ -66,6 +66,8 @@
 .eta-refresh-btn:hover{background:var(--kraft-bg2);border-color:var(--kraft)}</style>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-132PFXDSM9"></script>
   <script src="js/main.js" defer></script>
+  <script>window.TRAFFIC_LANG = { title: '🚨 特別交通消息', loading: '載入特別交通消息...' };</script>
+  <script src="js/traffic-news.js" defer></script>
   <script src="js/i18n.js" defer></script>
   <script src="js/animations.js" defer></script>
   <!-- js/eta.js intentionally omitted: inline script below handles ETA with 3-bus display, direction toggle, and search -->
@@ -105,6 +107,7 @@
   </section>
 
   <main class="container">
+    <div id="traffic-news" class="traffic-news" style="display:none;"></div>
     <div class="ad-placeholder" style="padding:0;border:none;background:transparent;">
       <div style="text-align:center;color:var(--gray-400);font-size:0.8rem;padding:12px;">📢 Ad Space · <span data-i18n="ad_placeholder">廣告招商 — 請聯繫我們</span></div>
     </div>
