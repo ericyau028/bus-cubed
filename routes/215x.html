@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>215X號巴士 路線資料 —  ↔  | 香港巴士便利站</title>
+  <meta name="description" content="215X號巴士路線資料：途經站點、即時到站、班次、車資一覽。往方向，港鐵轉乘提示與常見問題。">
+  <link rel="canonical" href="https://bus.cubedhub.com/routes/215x.html">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#c4956a">
+  <link rel="apple-touch-icon" href="../icons/icon-192.png">
+  <style>
+    :root{--blue:#2563eb;--blue-light:#dbeafe;--blue-dark:#1e40af;--green:#059669;--green-light:#d1fae5;--amber:#d97706;--amber-light:#fef3c7;--red:#dc2626;--red-light:#fee2e2;--gray-100:#f0ede8;--gray-200:#e0dcd4;--gray-300:#c5c0b6;--gray-400:#9e9a94;--gray-500:#7a7670;--gray-600:#5c5852;--gray-700:#3d3a35;--white:#fff;--radius:12px;--radius-sm:8px;--shadow:0 4px 12px rgba(0,0,0,.08);--shadow-sm:0 1px 3px rgba(0,0,0,.06)}
+    .route-head{display:flex;align-items:center;gap:14px;background:var(--white);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);margin:16px 0}
+    .route-num{font-size:2.4rem;font-weight:800;color:#d97706;min-width:96px;text-align:center;line-height:1.1}
+    .route-dir{font-size:1rem;color:var(--gray-700);font-weight:600}
+    .route-dir-sub{font-size:.78rem;color:var(--gray-400);margin-top:4px}
+    .route-section{background:var(--white);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);margin:16px 0}
+    .route-section h2{font-size:1.15rem;font-weight:800;color:var(--gray-800);margin:0 0 14px;display:flex;align-items:center;gap:8px}
+    .route-stop-row{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--gray-100);font-size:.9rem}
+    .route-stop-row:last-child{border-bottom:none}
+    .route-stop-seq{color:var(--gray-400);font-size:.72rem;font-weight:600;min-width:24px}
+    .route-stop-name{flex:1;color:var(--gray-800);font-weight:500}
+    .route-stop-zone{color:var(--gray-400);font-size:.72rem}
+    .route-eta-widget{margin-top:8px}
+    .route-eta-loading,.route-eta-error{color:var(--gray-500);font-size:.85rem;padding:8px 0}
+    .route-eta-row{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--gray-100);font-size:.9rem}
+    .route-eta-idx{color:var(--gray-400);font-size:.72rem;min-width:24px}
+    .route-eta-name{flex:1;color:var(--gray-800)}
+    .route-eta-val{font-weight:700;font-size:.85rem;white-space:nowrap;min-width:44px;text-align:right}
+    .route-eta-val.green{color:var(--green)}.route-eta-val.amber{color:var(--amber)}.route-eta-val.red{color:var(--red)}.route-eta-val.gray{color:var(--gray-400)}
+    .fav-btn{display:inline-flex;align-items:center;gap:6px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius-sm);padding:10px 18px;font-family:inherit;font-size:.9rem;font-weight:700;cursor:pointer;margin-top:12px}
+    .fav-btn:hover{background:var(--blue-dark)}
+    .fav-btn.added{background:var(--green)}
+    table{width:100%;border-collapse:collapse;font-size:.88rem;margin-top:8px}
+    th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--gray-100)}
+    th{background:var(--gray-100);font-weight:800;color:var(--gray-700)}
+    .source-note{font-size:.75rem;color:var(--gray-400);margin-top:10px;line-height:1.6}
+    .route-chips{display:flex;flex-wrap:wrap;gap:8px}
+    .route-chip{display:inline-block;background:var(--gray-100);border:1px solid var(--gray-200);color:var(--gray-700);border-radius:var(--radius-full);padding:6px 14px;font-size:.82rem;font-weight:600;text-decoration:none}
+    .route-chip:hover{background:var(--blue-light);border-color:var(--blue);color:var(--blue-dark)}
+    .dir-tabs{display:flex;gap:8px;margin-bottom:14px}
+    .dir-tab{padding:8px 16px;border:2px solid var(--gray-200);border-radius:var(--radius);font-family:inherit;font-size:.85rem;font-weight:600;cursor:pointer;background:var(--white);color:var(--gray-600)}
+    .dir-tab.active{background:var(--blue-light);border-color:var(--blue);color:var(--blue-dark)}
+    .dir-tab-west{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green);border-radius:var(--radius-full);padding:4px 10px;font-size:.72rem;font-weight:700}
+    .faq-q{font-weight:700;color:var(--gray-800);margin:14px 0 6px}
+    .faq-a{color:var(--gray-600);font-size:.9rem;line-height:1.7;margin:0}
+  </style>
+  <meta name="google-adsense-account" content="ca-pub-4900630860092971">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4900630860092971" crossorigin="anonymous"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-132PFXDSM9"></script>
+  <script src="../js/main.js" defer></script>
+  <script src="../js/i18n.js" defer></script>
+  <script src="../js/animations.js" defer></script>
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"BreadcrumbList",
+    "itemListElement":[
+      {"@type":"ListItem","position":1,"name":"首頁","item":"https://bus.cubedhub.com/"},
+      {"@type":"ListItem","position":2,"name":"路線目錄","item":"https://bus.cubedhub.com/routes.html"},
+      {"@type":"ListItem","position":3,"name":"215X號路線"}
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"FAQPage",
+    "mainEntity":[
+      {"@type":"Question","name":"215X 巴士班次幾耐一班？","acceptedAnswer":{"@type":"Answer","text":"資料來源：運輸署。實際班次視乎時段而異，繁忙時間較密、深夜較疏。建議使用頁面內「即時到站」功能查看實時預報，並留意九巴 App 或站牌顯示。"}},
+      {"@type":"Question","name":"215X 號巴士覆蓋邊啲地區？","acceptedAnswer":{"@type":"Answer","text":"乘坐 215X 可途經  與  之間多個主要地區。以上站點清單為現時途經車站列表，實際站位以現場站牌為準。"}},
+      {"@type":"Question","name":"215X 號巴士全程車資幾多？","acceptedAnswer":{"@type":"Answer","text":"全程車資以運輸署及九巴公布的收費為準，並設分段收費。以下車資表為資料來源表示，實際收費或會調整，請以車廂內或九巴官方資料為準。"}}
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"WebPage",
+    "name":"215X號巴士路線資料",
+    "url":"https://bus.cubedhub.com/routes/215x.html",
+    "description":"215X號巴士路線資料與即時到站。"
+  }
+  </script>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="container">
+      <a href="#" data-lang="zh-Hant">繁體</a>
+      <a href="#" data-lang="zh-Hans">簡體</a>
+      <a href="#" data-lang="en">English</a>
+    </div>
+  </div>
+
+  <nav>
+    <div class="container">
+      <a href="../index.html" class="nav-brand">🚌 香港<span>巴士站</span></a>
+      <button class="nav-toggle" aria-label="選單">☰</button>
+      <div class="nav-menu">
+        <a href="../index.html"><span class="nav-icon">🏠</span> <span data-i18n="nav_home">首頁</span></a>
+        <a href="../map.html"><span class="nav-icon">🗺️</span> <span data-i18n="nav_map">地圖</span></a>
+        <a href="../list.html"><span class="nav-icon">📋</span> <span data-i18n="nav_list">列表</span></a>
+        <a href="../routes.html" class="active"><span class="nav-icon">🚌</span> <span data-i18n="nav_routes">路線</span></a>
+        <a href="../eta.html"><span class="nav-icon">⏱</span> <span data-i18n="nav_eta">到站</span></a>
+        <a href="../fav.html"><span class="nav-icon">⭐</span> <span data-i18n="nav_bus_fav">常用</span></a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="page-header">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="../index.html" data-i18n="breadcrumb_home">首頁</a> &gt; <a href="../routes.html">路線</a> &gt; <span>215X號</span>
+      </div>
+      <h2>215X號巴士路線資料</h2>
+      <p>即時到站、途經站點、班次與車資</p>
+    </div>
+  </section>
+
+  <main class="container">
+    <div class="route-head">
+      <div class="route-num">215X</div>
+      <div>
+        <div class="route-dir"> ↔ （班次、站牌、車資）</div>
+        <div class="route-dir-sub">LAM TIN (KWONG TIN ESTATE) ⇄ KOWLOON STATION · 九巴 (KMB)</div>
+        <button class="fav-btn" id="favBtn" onclick="toggleRouteFav('215X')">⭐ 加到我的最愛</button>
+      </div>
+    </div>
+
+    <div class="route-section" id="eta">
+      <h2>⏱ 即時到站</h2>
+      <div class="route-eta-widget" data-route="215X" data-bound="O">
+        <div class="route-eta-stops"><div class="route-eta-loading">載入到站時間中…</div></div>
+      </div>
+      <div class="source-note">即時到站資料來源：運輸署巴士到站時間預報系統。頁面會自動每 30 秒更新。</div>
+    </div>
+
+    <div class="route-section">
+      <h2>📍 途經站點</h2>
+      <div class="dir-tabs">
+        <button class="dir-tab active" onclick="showDir('O',this)">O 往 </button>
+        <button class="dir-tab" onclick="showDir('I',this)">I 往 </button>
+      </div>
+      <div id="stops-O"><div class="route-stop-row"><span class="route-stop-seq">1</span><span class="route-stop-name">藍田(廣田邨)總站 (LT923)</span><span class="route-stop-zone">觀塘</span></div><div class="route-stop-row"><span class="route-stop-seq">2</span><span class="route-stop-name">龍栢閣 (LT122)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">3</span><span class="route-stop-name">康雅苑 (LT124)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">4</span><span class="route-stop-name">德康樓 (LT126)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">5</span><span class="route-stop-name">德敬樓 (LT127)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">6</span><span class="route-stop-name">康逸苑 (LT502)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">7</span><span class="route-stop-name">啟田商場 (LT533)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">8</span><span class="route-stop-name">基孝中學 (LT534)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">9</span><span class="route-stop-name">藍田站 (LT608)</span><span class="route-stop-zone">觀塘</span></div><div class="route-stop-row"><span class="route-stop-seq">10</span><span class="route-stop-name">觀塘法院 (KT610)</span><span class="route-stop-zone">觀塘</span></div><div class="route-stop-row"><span class="route-stop-seq">11</span><span class="route-stop-name">觀塘轉車站 - 創紀之城 (KT635)</span><span class="route-stop-zone">觀塘</span></div><div class="route-stop-row"><span class="route-stop-seq">12</span><span class="route-stop-name">啟隧轉車站-啟福道 (KT590)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">13</span><span class="route-stop-name">紅磡曲街 (HH742)</span><span class="route-stop-zone">尖沙咀</span></div><div class="route-stop-row"><span class="route-stop-seq">14</span><span class="route-stop-name">香港理工大學 (YT620)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">15</span><span class="route-stop-name">香港科學館 (YT622)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">16</span><span class="route-stop-name">尖沙咀麼地道 (YT624)</span><span class="route-stop-zone">尖沙咀</span></div><div class="route-stop-row"><span class="route-stop-seq">17</span><span class="route-stop-name">尖東站 K11 MUSEA (YT633)</span><span class="route-stop-zone">尖沙咀</span></div><div class="route-stop-row"><span class="route-stop-seq">18</span><span class="route-stop-name">九龍公園徑 (YT640)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">19</span><span class="route-stop-name">中港城 戲曲中心 (YT645)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">20</span><span class="route-stop-name">柯士甸道西 (YT262)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">21</span><span class="route-stop-name">九龍站,高鐵站 (YT942)</span><span class="route-stop-zone">其他</span></div></div>
+      <div id="stops-I" style="display:none;"><div class="route-stop-row"><span class="route-stop-seq">1</span><span class="route-stop-name">九龍站,高鐵站 (YT942)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">2</span><span class="route-stop-name">西隧轉車站 - 雅翔道 (YT301)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">3</span><span class="route-stop-name">柯士甸道 戲曲中心 (YT202)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">4</span><span class="route-stop-name">廣東道,新港中心 (YT206)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">5</span><span class="route-stop-name">尖東站 K11 MUSEA (YT217)</span><span class="route-stop-zone">尖沙咀</span></div><div class="route-stop-row"><span class="route-stop-seq">6</span><span class="route-stop-name">尖沙咀麼地道 (YT221)</span><span class="route-stop-zone">尖沙咀</span></div><div class="route-stop-row"><span class="route-stop-seq">7</span><span class="route-stop-name">加連威老道 (YT222)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">8</span><span class="route-stop-name">香港理工大學 (YT230)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">9</span><span class="route-stop-name">紅磡山谷道 (HH175)</span><span class="route-stop-zone">尖沙咀</span></div><div class="route-stop-row"><span class="route-stop-seq">10</span><span class="route-stop-name">啟隧轉車站-啟福道 (KT100)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">11</span><span class="route-stop-name">九龍灣宏通街 (KT101)</span><span class="route-stop-zone">觀塘</span></div><div class="route-stop-row"><span class="route-stop-seq">12</span><span class="route-stop-name">觀塘順業街 (KT200)</span><span class="route-stop-zone">觀塘</span></div><div class="route-stop-row"><span class="route-stop-seq">13</span><span class="route-stop-name">觀塘勵業街 (KT201)</span><span class="route-stop-zone">觀塘</span></div><div class="route-stop-row"><span class="route-stop-seq">14</span><span class="route-stop-name">創紀之城 (KT341)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">15</span><span class="route-stop-name">觀塘轉車站-觀塘市中心 (KT348)</span><span class="route-stop-zone">觀塘</span></div><div class="route-stop-row"><span class="route-stop-seq">16</span><span class="route-stop-name">觀塘游泳池 (KT361)</span><span class="route-stop-zone">觀塘</span></div><div class="route-stop-row"><span class="route-stop-seq">17</span><span class="route-stop-name">藍田站 (落客站) (LT900)</span><span class="route-stop-zone">觀塘</span></div><div class="route-stop-row"><span class="route-stop-seq">18</span><span class="route-stop-name">藍田站 (LT908)</span><span class="route-stop-zone">觀塘</span></div><div class="route-stop-row"><span class="route-stop-seq">19</span><span class="route-stop-name">基孝中學 (LT135)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">20</span><span class="route-stop-name">康田苑 (LT136)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">21</span><span class="route-stop-name">啟田商場 (LT137)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">22</span><span class="route-stop-name">啟田邨 (LT145)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">23</span><span class="route-stop-name">藍田公園 (LT510)</span><span class="route-stop-zone">觀塘</span></div><div class="route-stop-row"><span class="route-stop-seq">24</span><span class="route-stop-name">德樂樓 (LT511)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">25</span><span class="route-stop-name">德隆樓 (LT512)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">26</span><span class="route-stop-name">廣靖樓 (LT513)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">27</span><span class="route-stop-name">廣田商場 (LT514)</span><span class="route-stop-zone">其他</span></div><div class="route-stop-row"><span class="route-stop-seq">28</span><span class="route-stop-name">藍田(廣田邨)總站 (LT923)</span><span class="route-stop-zone">觀塘</span></div></div>
+      <div class="source-note">站點以運輸署最新路線資料為準，沿途可與港鐵及多條巴士路線轉乘。</div>
+    </div>
+
+    <div class="route-section">
+      <h2>🕒 時間表（班次）</h2>
+      <table>
+        <thead><tr><th>時段</th><th>方向</th><th>頭班車</th><th>尾班車</th><th>班距</th></tr></thead>
+        <tbody>
+          <tr><td>平日</td><td>往 </td><td>資料來源：運輸署</td><td>資料來源：運輸署</td><td>繁忙約 6-10 分鐘</td></tr>
+          <tr><td>假日</td><td>往 </td><td>資料來源：運輸署</td><td>資料來源：運輸署</td><td>視乎路況而定</td></tr>
+        </tbody>
+      </table>
+      <div class="source-note">實際頭尾班車時間與班距，請以九巴 App 或運輸署公布為準。本頁以官方 ETA 為核心。</div>
+    </div>
+
+    <div class="route-section">
+      <h2>💵 車資收費</h2>
+      <table>
+        <thead><tr><th>收費類別</th><th>全程車資</th><th>備註</th></tr></thead>
+        <tbody>
+          <tr><td>成人全程</td><td>請以官方為準</td><td>分段收費設於部分站點</td></tr>
+          <tr><td>優惠</td><td>請以官方為準</td><td>長者／小童／殘疾人士</td></tr>
+        </tbody>
+      </table>
+      <div class="source-note">車資資料來源：運輸署。實際收費以九巴官方公布為準，設分段收費，建議上車前查看車廂收費表。</div>
+    </div>
+
+    <div class="route-section">
+      <h2>🔗 相關路線</h2>
+      <div class="route-chips"><a class="route-chip" href="14.html">14</a><a class="route-chip" href="219x.html">219X</a><a class="route-chip" href="1a.html">1A</a><a class="route-chip" href="28.html">28</a><a class="route-chip" href="../eta.html">🚌 即時到站查詢</a><a class="route-chip" href="../map.html">🗺️ 巴士地圖</a></div>
+    </div>
+
+    <div class="route-section">
+      <h2>💬 常見問題</h2>
+      <p class="faq-q">215X 巴士班次幾耐一班？</p><p class="faq-a">資料來源：運輸署。實際班次視乎時段而異，繁忙時間較密、深夜較疏。建議使用頁面內「即時到站」功能查看實時預報，並留意九巴 App 或站牌顯示。</p><p class="faq-q">215X 號巴士覆蓋邊啲地區？</p><p class="faq-a">乘坐 215X 可途經  與  之間多個主要地區。以上站點清單為現時途經車站列表，實際站位以現場站牌為準。</p><p class="faq-q">215X 號巴士全程車資幾多？</p><p class="faq-a">全程車資以運輸署及九巴公布的收費為準，並設分段收費。以下車資表為資料來源表示，實際收費或會調整，請以車廂內或九巴官方資料為準。</p>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p data-i18n="footer_copyright">© 2026 香港巴士便利站 | 資料僅供參考，實際情況以現場為準</p>
+      <p style="font-size:0.75rem;color:var(--gray-400);margin-top:4px;" data-i18n="source_bus">資料來源：運輸署 巴士到站時間預報系統</p>
+      <div class="footer-links">
+        <a href="../index.html" data-i18n="footer_home">首頁</a>
+        <a href="../map.html" data-i18n="footer_map">🗺️ 地圖</a>
+        <a href="../list.html" data-i18n="footer_list">📋 列表</a>
+        <a href="../routes.html" data-i18n="footer_routes">🚌 路線</a>
+        <a href="../eta.html" data-i18n="footer_eta">⏱ 到站</a>
+        <a href="../fav.html" data-i18n="footer_fav">⭐ 常用</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../js/route-eta.js" defer></script>
+  <script>
+    function showDir(bound,btn){
+      document.getElementById('stops-O').style.display = bound==='O'?'':'none';
+      document.getElementById('stops-I').style.display = bound==='I'?'':'none';
+      var tabs=btn.parentElement.querySelectorAll('.dir-tab');
+      var n2 = tabs.length;
+      for(var i=0; i < n2; i++) tabs[i].classList.toggle('active', tabs[i] === btn);
+    }
+    function toggleRouteFav(route){
+      var favs=[];
+      try{ favs=JSON.parse(localStorage.getItem('bus_route_favs')||'[]'); }catch(e){}
+      var idx=favs.indexOf(route);
+      var btn=document.getElementById('favBtn');
+      if(idx===-1){ favs.unshift(route); btn.textContent='✅ 已加入最愛'; btn.classList.add('added'); }
+      else { favs.splice(idx,1); btn.textContent='⭐ 加到我的最愛'; btn.classList.remove('added'); }
+      try{ localStorage.setItem('bus_route_favs',JSON.stringify(favs)); }catch(e){}
+    }
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('../sw.js').catch(function() {});
+      });
+    }
+  </script>
+</body>
+</html>

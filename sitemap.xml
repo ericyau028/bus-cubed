@@ -6,4 +6,7 @@
   <url><loc>https://bus.cubedhub.com/list.html</loc><priority>0.8</priority></url>
   <url><loc>https://bus.cubedhub.com/eta.html</loc><priority>0.8</priority></url>
   <url><loc>https://bus.cubedhub.com/fav.html</loc><priority>0.7</priority></url>
+  <url><loc>https://bus.cubedhub.com/routes/1a.html</loc><priority>0.8</priority></url>
+  <url><loc>https://bus.cubedhub.com/routes/74x.html</loc><priority>0.8</priority></url>
+  <url><loc>https://bus.cubedhub.com/routes/215x.html</loc><priority>0.8</priority></url>
 </urlset>
