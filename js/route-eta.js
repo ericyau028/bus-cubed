@@ -52,6 +52,7 @@
     var list = widget.querySelector('.route-eta-stops');
     if (!list) return;
     list.innerHTML = '<div class="route-eta-loading">載入到站時間中…</div>';
+    var isCtb = widget.getAttribute('data-ctb') === '1';
     var url = 'https://data.etabus.gov.hk/v1/transport/kmb/route-eta/' + encodeURIComponent(route) + '/1';
     fetch(url)
       .then(function(r) { return r.json(); })
@@ -71,6 +72,9 @@
             '<span class="route-eta-name">' + (nm[i] || '') + '</span>' +
             '<span class="route-eta-time"><span class="route-eta-val gray">--</span></span></div>';
         }
+        if (isCtb && allEta.length === 0) {
+          stopsHtml += '<div class="route-eta-error">此路線由城巴營運，即時到站請以城巴 App／車站顯示屏為準。</div>';
+        }
         list.innerHTML = stopsHtml;
         render(widget, bound, allEta);
       })
@@ -82,6 +86,7 @@
   widgets.forEach(loadWidget);
   setInterval(function() {
     widgets.forEach(function(w) {
+      if (w.getAttribute('data-ctb') === '1') return;
       var route = w.getAttribute('data-route');
       var bound = w.getAttribute('data-bound') || 'O';
       var url = 'https://data.etabus.gov.hk/v1/transport/kmb/route-eta/' + encodeURIComponent(route) + '/1';
