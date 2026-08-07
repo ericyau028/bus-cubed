@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <link rel="manifest" href="manifest.json">
+    <meta name="google-adsense-account" content="ca-pub-4900630860092971">
   <meta name="theme-color" content="#c4956a">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <!-- inline ETA styles to prevent unstyled flash due to GitHub Pages CDN cache -->
@@ -71,6 +72,7 @@
   <script src="js/i18n.js" defer></script>
   <script src="js/animations.js" defer></script>
   <!-- js/eta.js intentionally omitted: inline script below handles ETA with 3-bus display, direction toggle, and search -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4900630860092971" crossorigin="anonymous"></script>
 </head>
 <body>
   <div class="top-bar">
@@ -108,8 +110,10 @@
 
   <main class="container">
     <div id="traffic-news" class="traffic-news" style="display:none;"></div>
-    <div class="ad-placeholder" style="padding:0;border:none;background:transparent;">
-      <div style="text-align:center;color:var(--gray-400);font-size:0.8rem;padding:12px;">📢 Ad Space · <span data-i18n="ad_placeholder">廣告招商 — 請聯繫我們</span></div>
+        <div class="ad-slot" style="min-height:100px;text-align:center;margin:12px 0;">
+      <ins class="adsbygoogle" style="display:block;min-height:100px;" data-ad-client="ca-pub-4900630860092971" data-ad-slot="6428216085" data-ad-format="auto" data-full-width-responsive="true"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
     </div>
 
     <div class="eta-typeahead">
