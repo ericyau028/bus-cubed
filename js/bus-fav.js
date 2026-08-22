@@ -217,8 +217,7 @@
         var cls = 'green';
         var pulse = '';
         var text;
-        if (mins <= 0) { cls = 'red'; pulse = 'fav-eta-pulse'; text = LANG.t('bus_fav_due') + ' 🔴'; }
-        else if (mins <= 2) { cls = 'amber'; pulse = 'fav-eta-pulse'; text = LANG.t('bus_fav_arriving') + ' 🟡'; }
+        if (mins <= 0) { cls = 'red'; pulse = 'fav-eta-pulse'; text = LANG.t('bus_fav_lt_min') + ' 🔴'; }
         else { text = mins + ' ' + LANG.t('bus_fav_min') + ' 🟢'; }
         html += '<div class="fav-eta-row">' +
           '<span class="fav-eta-label">' + labels[i] + ':</span>' +

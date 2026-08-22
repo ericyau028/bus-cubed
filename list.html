@@ -44,6 +44,7 @@
         <a href="map.html"><span class="nav-icon">🗺️</span> <span data-i18n="nav_map">地圖</span></a>
         <a href="list.html" class="active"><span class="nav-icon">📋</span> <span data-i18n="nav_list">列表</span></a>
         <a href="routes.html"><span class="nav-icon">🚌</span> <span data-i18n="nav_routes">路線</span></a>
+        <a href="plan.html"><span class="nav-icon">🧭</span> <span data-i18n="nav_plan">規劃</span></a>
         <a href="eta.html"><span class="nav-icon">⏱</span> <span data-i18n="nav_eta">到站</span></a>
         <a href="fav.html"><span class="nav-icon">⭐</span> <span data-i18n="nav_bus_fav">常用</span></a>
       </div>
@@ -85,6 +86,7 @@
         <a href="index.html" data-i18n="footer_home">首頁</a>
         <a href="map.html" data-i18n="footer_map">🗺️ 地圖</a>
         <a href="routes.html" data-i18n="footer_routes">🚌 路線</a>
+        <a href="plan.html" data-i18n="footer_plan">🧭 規劃</a>
         <a href="eta.html" data-i18n="footer_eta">⏱ 到站</a>
         <a href="fav.html" data-i18n="footer_fav">⭐ 常用</a>
       </div>
@@ -212,7 +214,7 @@
     render(groupAndSort(stops));
     if(typeof window.createSearch==='function'){
       window.createSearch({
-        container:'#search-container',data:stops,fields:['name_tc','name_en','_district','id'],
+        container:'#search-container',data:stops,fields:['name_tc','name_en','_district','id','routes'],
         placeholder:LANG.t('search_placeholder'),
         onFilter:function(fd){render(groupAndSort(fd));}
       });

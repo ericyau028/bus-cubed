@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>巴士路線規劃 | 香港巴士便利站</title>
+  <meta name="description" content="香港巴士路線規劃 - 輸入起點與終點車站，自動規劃直達或 1-2 次轉乘的巴士路線方案。涵蓋 KMB 九巴及 LWB 龍運巴士全港路線。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="google-adsense-account" content="ca-pub-4900630860092971">
+  <meta name="theme-color" content="#c4956a">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-132PFXDSM9"></script>
+  <script src="js/i18n.js" defer></script>
+  <script src="js/animations.js" defer></script>
+  <script src="js/main.js" defer></script>
+  <script src="js/plan.js" defer></script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4900630860092971" crossorigin="anonymous"></script>
+  <style>
+    .plan-wrap { padding: 12px 0 24px; }
+    .plan-form { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 16px; margin-bottom: 16px; }
+    .plan-field { margin-bottom: 14px; }
+    .plan-field label { display: block; font-size: 0.85rem; font-weight: 700; color: var(--gray-700); margin-bottom: 6px; }
+    .plan-autocomplete { position: relative; }
+    .plan-input { width: 100%; padding: 11px 14px; border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm); font-size: 0.95rem; color: var(--gray-800); background: var(--white); transition: border-color var(--transition); }
+    .plan-input:focus { outline: none; border-color: var(--blue); }
+    .plan-suggest { position: absolute; top: 100%; left: 0; right: 0; background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); max-height: 260px; overflow-y: auto; z-index: 50; display: none; }
+    .plan-suggest-item { padding: 10px 14px; cursor: pointer; font-size: 0.88rem; color: var(--gray-700); border-bottom: 1px solid var(--gray-100); }
+    .plan-suggest-item:hover, .plan-suggest-item.hl { background: var(--blue-light); }
+    .plan-transfers { display: flex; gap: 8px; margin-bottom: 16px; }
+    .plan-transfer-btn { flex: 1; padding: 10px 0; text-align: center; border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm); background: var(--white); font-size: 0.85rem; font-weight: 700; color: var(--gray-600); cursor: pointer; transition: all var(--transition); }
+    .plan-transfer-btn.active { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+    .plan-submit { width: 100%; padding: 13px 0; background: var(--blue); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 1rem; font-weight: 700; cursor: pointer; transition: background var(--transition); }
+    .plan-submit:hover { background: var(--blue-dark); }
+    .plan-submit:disabled { background: var(--gray-300); cursor: not-allowed; }
+    .plan-result { display: none; }
+    .plan-result.show { display: block; }
+    .plan-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 12px; border-left: 4px solid var(--blue); }
+    .plan-card.transfer-1 { border-left-color: var(--amber); }
+    .plan-card.transfer-2 { border-left-color: var(--purple); }
+    .plan-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .plan-card-head .tag { font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: var(--radius-full); background: var(--blue-light); color: var(--blue); }
+    .plan-card.transfer-1 .tag { background: #fef3c7; color: var(--amber); }
+    .plan-card.transfer-2 .tag { background: #ede9fe; color: var(--purple); }
+    .plan-leg { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--gray-100); }
+    .plan-leg:last-child { border-bottom: none; }
+    .plan-leg-route { min-width: 48px; text-align: center; padding: 4px 8px; background: var(--gray-800); color: #fff; border-radius: 6px; font-weight: 800; font-size: 0.85rem; }
+    .plan-leg-info { flex: 1; font-size: 0.85rem; color: var(--gray-600); line-height: 1.5; }
+    .plan-leg-info strong { color: var(--gray-800); }
+    .plan-swap { text-align: center; font-size: 0.72rem; color: var(--gray-400); padding: 4px 0; }
+    .plan-empty, .plan-error { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px 16px; text-align: center; color: var(--gray-500); font-size: 0.9rem; }
+    .plan-eta-link { display: block; margin-top: 10px; text-align: center; font-size: 0.85rem; color: var(--blue); font-weight: 700; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="container">
+      <a href="#" data-lang="zh-Hant">繁體</a>
+      <a href="#" data-lang="zh-Hans">簡體</a>
+      <a href="#" data-lang="en">English</a>
+    </div>
+  </div>
+
+  <nav>
+    <div class="container">
+      <a href="index.html" class="nav-brand">🚌 香港<span>巴士站</span></a>
+      <button class="nav-toggle" aria-label="選單">☰</button>
+      <div class="nav-menu">
+        <a href="index.html"><span class="nav-icon">🏠</span> <span data-i18n="nav_home">首頁</span></a>
+        <a href="map.html"><span class="nav-icon">🗺️</span> <span data-i18n="nav_map">地圖</span></a>
+        <a href="list.html"><span class="nav-icon">📋</span> <span data-i18n="nav_list">列表</span></a>
+        <a href="routes.html"><span class="nav-icon">🚌</span> <span data-i18n="nav_routes">路線</span></a>
+        <a href="eta.html"><span class="nav-icon">⏱</span> <span data-i18n="nav_eta">到站</span></a>
+        <a href="fav.html"><span class="nav-icon">⭐</span> <span data-i18n="nav_bus_fav">常用</span></a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero-box reveal">
+    <div class="container">
+      <h1>🧭 巴士路線規劃</h1>
+      <p>輸入起點與終點車站，自動規劃直達或轉乘方案</p>
+    </div>
+  </section>
+
+  <main class="container">
+    <div class="plan-wrap">
+      <div class="plan-form">
+        <div class="plan-field">
+          <label>📍 起點車站</label>
+          <div class="plan-autocomplete">
+            <input type="text" id="plan-from" class="plan-input" placeholder="輸入起點車站名稱，例如 尖沙咀碼頭" autocomplete="off">
+            <div class="plan-suggest" id="plan-from-suggest"></div>
+          </div>
+        </div>
+        <div class="plan-field">
+          <label>🏁 終點車站</label>
+          <div class="plan-autocomplete">
+            <input type="text" id="plan-to" class="plan-input" placeholder="輸入終點車站名稱，例如 沙田市中心" autocomplete="off">
+            <div class="plan-suggest" id="plan-to-suggest"></div>
+          </div>
+        </div>
+        <div class="plan-transfers">
+          <button class="plan-transfer-btn active" data-max="1" type="button">允許 1 次轉乘</button>
+          <button class="plan-transfer-btn" data-max="2" type="button">允許 2 次轉乘</button>
+        </div>
+        <button class="plan-submit" id="plan-submit" type="button">🔍 搜尋路線</button>
+      </div>
+
+      <div class="plan-result" id="plan-result"></div>
+    </div>
+
+    <div class="ad-slot" style="min-height:100px;text-align:center;margin:12px 0;">
+      <ins class="adsbygoogle" style="display:block;min-height:100px;" data-ad-client="ca-pub-4900630860092971" data-ad-slot="6428216085" data-ad-format="auto" data-full-width-responsive="true"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p data-i18n="footer_copyright">© 2026 香港巴士便利站 | 資料僅供參考，實際情況以現場為準</p>
+      <p style="font-size:0.75rem;color:var(--gray-400);margin-top:4px;" data-i18n="source_bus">資料來源：運輸署 巴士到站時間預報系統</p>
+      <div class="footer-links">
+        <a href="index.html" data-i18n="footer_home">首頁</a>
+        <a href="map.html" data-i18n="footer_map">🗺️ 地圖</a>
+        <a href="list.html" data-i18n="footer_list">📋 列表</a>
+        <a href="routes.html" data-i18n="footer_routes">🚌 路線</a>
+        <a href="eta.html" data-i18n="footer_eta">⏱ 到站</a>
+        <a href="fav.html" data-i18n="footer_fav">⭐ 常用</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    var fromSid = null, toSid = null;
+    var stopIndex = []; // {id, name}
+    var activeField = null;
+    var maxTransfers = 1;
+
+    // Load stop index for autocomplete
+    fetch('data/bus-stops-index.json').then(function(r) { return r.json(); }).then(function(data) {
+      stopIndex = [];
+      for (var id in data) {
+        var s = data[id];
+        if (s.name_tc) stopIndex.push({ id: id, name: s.name_tc });
+      }
+      stopIndex.sort(function(a, b) { return a.name.localeCompare(b.name, 'zh-Hant'); });
+    });
+
+    function showSuggest(input, list, q) {
+      q = q.trim().toLowerCase();
+      list.innerHTML = '';
+      if (q.length < 1) { list.style.display = 'none'; return; }
+      var matches = stopIndex.filter(function(s) {
+        return s.name.toLowerCase().indexOf(q) !== -1;
+      }).slice(0, 20);
+      if (matches.length === 0) { list.style.display = 'none'; return; }
+      matches.forEach(function(m) {
+        var div = document.createElement('div');
+        div.className = 'plan-suggest-item';
+        div.textContent = m.name;
+        div.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          input.value = m.name;
+          list.style.display = 'none';
+          if (input.id === 'plan-from') fromSid = m.id; else toSid = m.id;
+        });
+        list.appendChild(div);
+      });
+      list.style.display = 'block';
+    }
+
+    function bindAutocomplete(inputId, suggestId, isFrom) {
+      var input = document.getElementById(inputId);
+      var list = document.getElementById(suggestId);
+      input.addEventListener('focus', function() { activeField = input; });
+      input.addEventListener('input', function() {
+        if (isFrom) fromSid = null; else toSid = null;
+        showSuggest(input, list, input.value);
+      });
+      document.addEventListener('click', function(e) {
+        if (!input.contains(e.target) && !list.contains(e.target)) list.style.display = 'none';
+      });
+    }
+
+    bindAutocomplete('plan-from', 'plan-from-suggest', true);
+    bindAutocomplete('plan-to', 'plan-to-suggest', false);
+
+    document.querySelectorAll('.plan-transfer-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        maxTransfers = parseInt(btn.getAttribute('data-max'), 10);
+        document.querySelectorAll('.plan-transfer-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+      });
+    });
+
+    document.getElementById('plan-submit').addEventListener('click', function() {
+      if (!fromSid || !toSid) {
+        document.getElementById('plan-result').className = 'plan-result show';
+        document.getElementById('plan-result').innerHTML = '<div class="plan-error">⚠️ 請先從建議清單中選擇起點與終點車站</div>';
+        return;
+      }
+      runPlan();
+    });
+
+    function runPlan() {
+      var result = document.getElementById('plan-result');
+      result.className = 'plan-result show';
+      result.innerHTML = '<div class="plan-error">正在搜尋路線方案…</div>';
+
+      PLAN.loadData(function() {
+        var fromName = PLAN.stopName(fromSid);
+        var toName = PLAN.stopName(toSid);
+        var planResult = PLAN.plan(fromSid, toSid);
+
+        if (planResult.error === 'same') {
+          result.innerHTML = '<div class="plan-error">⚠️ 起點與終點相同</div>';
+          return;
+        }
+
+        var plans = (planResult.plans || []).filter(function(p) { return p.transfers <= maxTransfers; });
+        if (plans.length === 0) {
+          result.innerHTML = '<div class="plan-empty">😔 找不到 ' + (maxTransfers === 1 ? '1 次轉乘' : '2 次轉乘') + ' 以內的巴士路線方案，請嘗試增加轉乘次數或改用其他交通方式。</div>';
+          return;
+        }
+
+        var html = '<div class="plan-card-head" style="padding:0 4px 10px;"><strong style="color:var(--gray-800);font-size:1rem;">' + fromName + ' → ' + toName + '</strong></div>';
+        plans.forEach(function(p, idx) {
+          var tagText = p.transfers === 0 ? '直達' : (p.transfers === 1 ? '1 次轉乘' : '2 次轉乘');
+          html += '<div class="plan-card transfer-' + p.transfers + '">' +
+            '<div class="plan-card-head"><span class="tag">方案 ' + (idx + 1) + ' · ' + tagText + '</span></div>';
+          p.legs.forEach(function(leg, li) {
+            html += '<div class="plan-leg">' +
+              '<span class="plan-leg-route">' + leg.route + '</span>' +
+              '<div class="plan-leg-info"><strong>' + leg.fromName + '</strong> → <strong>' + leg.toName + '</strong><br><span style="font-size:0.75rem;color:var(--gray-400);">第 ' + leg.fromIdx + '–' + leg.toIdx + ' 站</span></div>' +
+            '</div>';
+            if (li < p.legs.length - 1) html += '<div class="plan-swap">⇅ 於 ' + leg.toName + ' 轉乘</div>';
+          });
+          var firstRoute = p.legs[0].route;
+          html += '<a class="plan-eta-link" href="eta.html" onclick="localStorage.setItem(\'eta_last_route\',\'' + firstRoute + '\');">⏱ 查看 ' + firstRoute + ' 即時到站 →</a>';
+          html += '</div>';
+        });
+        result.innerHTML = html;
+      });
+    }
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('sw.js').catch(function(err) {
+          console.warn('SW registration failed:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>

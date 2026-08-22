@@ -150,8 +150,8 @@
     if (typeof val === 'number' || /^\d+$/.test(val)) {
       var secs = parseInt(val);
       if (secs < 0) return null;
-      if (secs < 60) return '即將';
       var mins = Math.round(secs / 60);
+      if (mins <= 0) mins = 0;
       return mins + ' 分';
     }
     // If it's ISO timestamp
@@ -159,7 +159,7 @@
     var now = new Date();
     var diff = Math.round((eta - now) / 60000);
     if (diff < 0) return null;
-    if (diff <= 1) return '即將';
+    if (diff <= 0) diff = 0;
     if (diff < 60) return diff + ' 分';
     return eta.getHours().toString().padStart(2,'0') + ':' + eta.getMinutes().toString().padStart(2,'0');
   }

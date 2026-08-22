@@ -92,6 +92,7 @@
         <a href="map.html"><span class="nav-icon">🗺️</span> <span data-i18n="nav_map">地圖</span></a>
         <a href="list.html"><span class="nav-icon">📋</span> <span data-i18n="nav_list">列表</span></a>
         <a href="routes.html"><span class="nav-icon">🚌</span> <span data-i18n="nav_routes">路線</span></a>
+        <a href="plan.html"><span class="nav-icon">🧭</span> <span data-i18n="nav_plan">規劃</span></a>
         <a href="eta.html" class="active"><span class="nav-icon">⏱</span> <span data-i18n="nav_eta">到站</span></a>
         <a href="fav.html"><span class="nav-icon">⭐</span> <span data-i18n="nav_bus_fav">常用</span></a>
       </div>
@@ -166,6 +167,7 @@
         <a href="map.html" data-i18n="footer_map">🗺️ 地圖</a>
         <a href="list.html" data-i18n="footer_list">📋 列表</a>
         <a href="routes.html" data-i18n="footer_routes">🚌 路線</a>
+        <a href="plan.html" data-i18n="footer_plan">🧭 規劃</a>
         <a href="fav.html" data-i18n="footer_fav">⭐ 常用</a>
       </div>
     </div>
@@ -406,8 +408,7 @@
               var mins = Math.round((new Date(e.eta) - now) / 60000);
               var cls = 'green';
               var text;
-              if (mins <= 0) { cls = 'red'; text = LANG.t('eta_due'); }
-              else if (mins <= 2) { cls = 'amber'; text = LANG.t('eta_arriving'); }
+              if (mins <= 0) { cls = 'red'; text = LANG.t('eta_lt_min'); }
               else { text = mins + ' ' + LANG.t('eta_min'); }
               etaHtml += '<div class="eta-stop-bus"><span class="eta-stop-label">' + labels[j] + '</span><span class="eta-stop-eta ' + cls + '">' + text + '</span></div>';
             });
