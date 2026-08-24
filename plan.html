@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>巴士路線規劃 | 香港巴士便利站</title>
-  <meta name="description" content="香港巴士路線規劃 - 輸入起點與終點車站，自動規劃直達或 1-2 次轉乘的巴士路線方案。涵蓋 KMB 九巴及 LWB 龍運巴士全港路線。">
+  <title>&#x1f9ed; &#x5df4;&#x58eb;&#x8def;&#x7dda;&#x898f;&#x5283; | &#x9999;&#x6e2f;&#x5df4;&#x58eb;&#x4fbf;&#x5229;&#x7ad9;</title>
+  <meta name="description" content="&#x9999;&#x6e2f;&#x5df4;&#x58eb;&#x4fbf;&#x5229;&#x7ad9; - &#x8def;&#x7dda;&#x898f;&#x5283;&#x3002;&#x8f38;&#x5165;&#x51fa;&#x767c;&#x5730;&#x548c;&#x76ee;&#x7684;&#x5730;&#xff0c;&#x81ea;&#x52d5;&#x5e6e;&#x4f60;&#x627e;&#x51fa;&#x6700;&#x4f73;&#x5df4;&#x58eb;&#x8def;&#x7dda;&#x3002;">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -15,44 +15,65 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-132PFXDSM9"></script>
   <script src="js/i18n.js" defer></script>
-  <script src="js/animations.js" defer></script>
   <script src="js/main.js" defer></script>
-  <script src="js/plan.js" defer></script>
+  <script src="js/route-planner.js" defer></script>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4900630860092971" crossorigin="anonymous"></script>
   <style>
-    .plan-wrap { padding: 12px 0 24px; }
-    .plan-form { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 16px; margin-bottom: 16px; }
-    .plan-field { margin-bottom: 14px; }
-    .plan-field label { display: block; font-size: 0.85rem; font-weight: 700; color: var(--gray-700); margin-bottom: 6px; }
-    .plan-autocomplete { position: relative; }
-    .plan-input { width: 100%; padding: 11px 14px; border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm); font-size: 0.95rem; color: var(--gray-800); background: var(--white); transition: border-color var(--transition); }
-    .plan-input:focus { outline: none; border-color: var(--blue); }
-    .plan-suggest { position: absolute; top: 100%; left: 0; right: 0; background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); max-height: 260px; overflow-y: auto; z-index: 50; display: none; }
-    .plan-suggest-item { padding: 10px 14px; cursor: pointer; font-size: 0.88rem; color: var(--gray-700); border-bottom: 1px solid var(--gray-100); }
-    .plan-suggest-item:hover, .plan-suggest-item.hl { background: var(--blue-light); }
-    .plan-transfers { display: flex; gap: 8px; margin-bottom: 16px; }
-    .plan-transfer-btn { flex: 1; padding: 10px 0; text-align: center; border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm); background: var(--white); font-size: 0.85rem; font-weight: 700; color: var(--gray-600); cursor: pointer; transition: all var(--transition); }
-    .plan-transfer-btn.active { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
-    .plan-submit { width: 100%; padding: 13px 0; background: var(--blue); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 1rem; font-weight: 700; cursor: pointer; transition: background var(--transition); }
-    .plan-submit:hover { background: var(--blue-dark); }
-    .plan-submit:disabled { background: var(--gray-300); cursor: not-allowed; }
-    .plan-result { display: none; }
-    .plan-result.show { display: block; }
-    .plan-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 12px; border-left: 4px solid var(--blue); }
-    .plan-card.transfer-1 { border-left-color: var(--amber); }
-    .plan-card.transfer-2 { border-left-color: var(--purple); }
-    .plan-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .plan-card-head .tag { font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: var(--radius-full); background: var(--blue-light); color: var(--blue); }
-    .plan-card.transfer-1 .tag { background: #fef3c7; color: var(--amber); }
-    .plan-card.transfer-2 .tag { background: #ede9fe; color: var(--purple); }
-    .plan-leg { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--gray-100); }
-    .plan-leg:last-child { border-bottom: none; }
-    .plan-leg-route { min-width: 48px; text-align: center; padding: 4px 8px; background: var(--gray-800); color: #fff; border-radius: 6px; font-weight: 800; font-size: 0.85rem; }
-    .plan-leg-info { flex: 1; font-size: 0.85rem; color: var(--gray-600); line-height: 1.5; }
-    .plan-leg-info strong { color: var(--gray-800); }
-    .plan-swap { text-align: center; font-size: 0.72rem; color: var(--gray-400); padding: 4px 0; }
-    .plan-empty, .plan-error { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px 16px; text-align: center; color: var(--gray-500); font-size: 0.9rem; }
-    .plan-eta-link { display: block; margin-top: 10px; text-align: center; font-size: 0.85rem; color: var(--blue); font-weight: 700; text-decoration: none; }
+    .plan-wrap{padding:16px 0 32px}
+    .plan-form{background:var(--white);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
+    .plan-input-group{position:relative;margin-bottom:12px}
+    .plan-input-group:last-child{margin-bottom:0}
+    .plan-label{font-size:.78rem;font-weight:700;color:var(--gray-500);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+    .plan-label-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+    .plan-label-dot.start{background:var(--green)}
+    .plan-label-dot.end{background:var(--red)}
+    .plan-input{width:100%;padding:12px 14px;border:2px solid var(--gray-200);border-radius:var(--radius-sm);font-family:inherit;font-size:15px;color:var(--gray-800);background:var(--gray-50);outline:none;transition:border-color .25s,background .25s}
+    .plan-input:focus{border-color:var(--kraft);background:var(--white)}
+    .plan-input::placeholder{color:var(--gray-400)}
+    .plan-swap{display:flex;justify-content:center;margin:-4px 0;position:relative;z-index:1}
+    .plan-swap-btn{background:var(--white);border:2px solid var(--gray-200);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;color:var(--gray-500);transition:all .25s;box-shadow:var(--shadow-sm)}
+    .plan-swap-btn:hover{border-color:var(--kraft);color:var(--kraft-dark);transform:rotate(180deg)}
+    .plan-go{width:100%;margin-top:16px;padding:14px;background:var(--blue);color:var(--white);border:none;border-radius:var(--radius-sm);font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;transition:background .25s,transform .25s;min-height:48px}
+    .plan-go:hover{background:var(--blue-dark)}
+    .plan-go:active{transform:scale(.98)}
+    .plan-suggestions{position:absolute;top:100%;left:0;right:0;background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-sm);box-shadow:var(--shadow-lg);max-height:220px;overflow-y:auto;z-index:100;display:none}
+    .plan-suggestions.show{display:block}
+    .plan-sug-item{padding:10px 14px;cursor:pointer;font-size:.88rem;border-bottom:1px solid var(--gray-100);transition:background .25s;display:flex;justify-content:space-between;align-items:center}
+    .plan-sug-item:hover{background:var(--kraft-bg2)}
+    .plan-sug-item:last-child{border-bottom:none}
+    .plan-sug-name{font-weight:500;color:var(--gray-800)}
+    .plan-sug-routes{display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end}
+    .plan-sug-route{font-size:.65rem;padding:1px 6px;border-radius:var(--radius-full);background:var(--green-light);color:var(--green-dark);font-weight:600}
+    .plan-results{display:flex;flex-direction:column;gap:12px}
+    .plan-result-card{background:var(--white);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden;border:1px solid rgba(0,0,0,.04)}
+    .plan-result-header{padding:14px 16px 10px;display:flex;justify-content:space-between;align-items:center}
+    .plan-result-badge{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:700;padding:4px 10px;border-radius:var(--radius-full)}
+    .plan-result-badge.direct{background:var(--green-light);color:var(--green-dark)}
+    .plan-result-badge.transfer{background:#fef3c7;color:#b45309}
+    .plan-result-stops{font-size:.78rem;color:var(--gray-500)}
+    .plan-segment{padding:0 16px 12px}
+    .plan-segment-route{display:inline-flex;align-items:center;gap:6px;font-size:1.1rem;font-weight:800;color:var(--blue);margin-bottom:6px}
+    .plan-segment-dir{font-size:.72rem;color:var(--gray-400);font-weight:500}
+    .plan-segment-stops{display:flex;flex-direction:column;gap:0;position:relative;padding-left:16px}
+    .plan-segment-stops::before{content:'';position:absolute;left:5px;top:8px;bottom:8px;width:2px;background:var(--gray-200)}
+    .plan-stop{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:.82rem;position:relative}
+    .plan-stop-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--gray-300);border:2px solid var(--white);z-index:1}
+    .plan-stop-dot.on{background:var(--blue)}
+    .plan-stop-dot.end-dot{background:var(--green)}
+    .plan-stop-dot.dest-dot{background:var(--red)}
+    .plan-stop-name{color:var(--gray-700);font-weight:500}
+    .plan-stop-name.highlight{color:var(--gray-900);font-weight:700}
+    .plan-separator{display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:.78rem;color:var(--amber);font-weight:600}
+    .plan-separator-line{flex:1;height:1px;background:var(--gray-200)}
+    .plan-result-link{display:block;padding:10px 16px;border-top:1px solid var(--gray-100);text-align:right}
+    .plan-result-link a{font-size:.82rem;font-weight:600;color:var(--blue)}
+    .plan-empty{text-align:center;padding:40px 20px;color:var(--gray-400)}
+    .plan-empty-icon{font-size:2.5rem;margin-bottom:12px}
+    .plan-empty-text{font-size:.95rem;line-height:1.6}
+    .plan-loading{text-align:center;padding:40px 0;color:var(--gray-500);font-size:.95rem}
+    .plan-tip{background:var(--kraft-bg2);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;font-size:.82rem;color:var(--gray-600);line-height:1.6}
+    .plan-tip strong{color:var(--gray-700)}
+    @media(max-width:480px){.plan-form{padding:16px}.plan-segment{padding:0 12px 10px}.plan-result-header{padding:12px}}
   </style>
 </head>
 <body>
@@ -63,193 +84,193 @@
       <a href="#" data-lang="en">English</a>
     </div>
   </div>
-
   <nav>
     <div class="container">
-      <a href="index.html" class="nav-brand">🚌 香港<span>巴士站</span></a>
-      <button class="nav-toggle" aria-label="選單">☰</button>
+      <a href="index.html" class="nav-brand">&#x1f68c; 香港<span>巴士站</span></a>
+      <button class="nav-toggle" aria-label="選單">&#x2630;</button>
       <div class="nav-menu">
-        <a href="index.html"><span class="nav-icon">🏠</span> <span data-i18n="nav_home">首頁</span></a>
-        <a href="map.html"><span class="nav-icon">🗺️</span> <span data-i18n="nav_map">地圖</span></a>
-        <a href="list.html"><span class="nav-icon">📋</span> <span data-i18n="nav_list">列表</span></a>
-        <a href="routes.html"><span class="nav-icon">🚌</span> <span data-i18n="nav_routes">路線</span></a>
-        <a href="plan.html" class="active"><span class="nav-icon">🧭</span> <span data-i18n="nav_plan">規劃</span></a>
-        <a href="eta.html"><span class="nav-icon">⏱</span> <span data-i18n="nav_eta">到站</span></a>
-        <a href="fav.html"><span class="nav-icon">⭐</span> <span data-i18n="nav_bus_fav">常用</span></a>
+        <a href="index.html"><span class="nav-icon">&#x1f3e0;</span> <span data-i18n="nav_home">首頁</span></a>
+        <a href="map.html"><span class="nav-icon">&#x1f5fa;</span> <span data-i18n="nav_map">地圖</span></a>
+        <a href="list.html"><span class="nav-icon">&#x1f4cb;</span> <span data-i18n="nav_list">列表</span></a>
+        <a href="routes.html"><span class="nav-icon">&#x1f68c;</span> <span data-i18n="nav_routes">路線</span></a>
+        <a href="eta.html"><span class="nav-icon">&#x23f1;</span> <span data-i18n="nav_eta">到站</span></a>
+        <a href="plan.html" class="active"><span class="nav-icon">&#x1f9ed;</span> <span>規劃</span></a>
+        <a href="fav.html"><span class="nav-icon">&#x2b50;</span> <span data-i18n="nav_bus_fav">常用</span></a>
       </div>
     </div>
   </nav>
-
-  <section class="hero-box reveal">
+  <section class="page-header">
     <div class="container">
-      <h1>🧭 巴士路線規劃</h1>
-      <p>輸入起點與終點車站，自動規劃直達或轉乘方案</p>
+      <div class="breadcrumb">
+        <a href="index.html" data-i18n="breadcrumb_home">首頁</a> &gt; <span>&#x1f9ed; 巴士路線規劃</span>
+      </div>
+      <h2>&#x1f9ed; 巴士路線規劃</h2>
+      <p>不知搭什麼車？輸入出發地和目的地，自動幫你找路</p>
     </div>
   </section>
-
   <main class="container">
-    <div class="plan-wrap">
-      <div class="plan-form">
-        <div class="plan-field">
-          <label>📍 起點車站</label>
-          <div class="plan-autocomplete">
-            <input type="text" id="plan-from" class="plan-input" placeholder="輸入起點車站名稱，例如 尖沙咀碼頭" autocomplete="off">
-            <div class="plan-suggest" id="plan-from-suggest"></div>
-          </div>
-        </div>
-        <div class="plan-field">
-          <label>🏁 終點車站</label>
-          <div class="plan-autocomplete">
-            <input type="text" id="plan-to" class="plan-input" placeholder="輸入終點車站名稱，例如 沙田市中心" autocomplete="off">
-            <div class="plan-suggest" id="plan-to-suggest"></div>
-          </div>
-        </div>
-        <div class="plan-transfers">
-          <button class="plan-transfer-btn active" data-max="1" type="button">允許 1 次轉乘</button>
-          <button class="plan-transfer-btn" data-max="2" type="button">允許 2 次轉乘</button>
-        </div>
-        <button class="plan-submit" id="plan-submit" type="button">🔍 搜尋路線</button>
-      </div>
-
-      <div class="plan-result" id="plan-result"></div>
-    </div>
-
     <div class="ad-slot" style="min-height:100px;text-align:center;margin:12px 0;">
       <ins class="adsbygoogle" style="display:block;min-height:100px;" data-ad-client="ca-pub-4900630860092971" data-ad-slot="6428216085" data-ad-format="auto" data-full-width-responsive="true"></ins>
       <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
     </div>
+    <div class="plan-wrap">
+      <div class="plan-tip">
+        <strong>&#x1f4a1; 使用提示：</strong>不用輸入精確站名。例如輸入「秦石邨」去「葵芳」，系統自動搜尋相關巴士站和可用路線。支援簡體中文輸入。
+      </div>
+      <div class="plan-form" id="plan-form">
+        <div class="plan-input-group">
+          <div class="plan-label"><span class="plan-label-dot start"></span> 從哪裡出發？</div>
+          <input type="text" class="plan-input" id="plan-start" placeholder="例如：秦石邨、旺角、尖沙咀..." autocomplete="off">
+          <div class="plan-suggestions" id="plan-start-sug"></div>
+        </div>
+        <div class="plan-swap">
+          <button class="plan-swap-btn" id="plan-swap" title="交換起點終點">&#x21c5;</button>
+        </div>
+        <div class="plan-input-group">
+          <div class="plan-label"><span class="plan-label-dot end"></span> 要去哪裡？</div>
+          <input type="text" class="plan-input" id="plan-end" placeholder="例如：葵芳、中環、機場..." autocomplete="off">
+          <div class="plan-suggestions" id="plan-end-sug"></div>
+        </div>
+        <button class="plan-go" id="plan-go">&#x1f50d; 查詢路線</button>
+      </div>
+      <div id="plan-results"></div>
+    </div>
   </main>
-
   <footer>
     <div class="container">
-      <p data-i18n="footer_copyright">© 2026 香港巴士便利站 | 資料僅供參考，實際情況以現場為準</p>
+      <p data-i18n="footer_copyright">&copy; 2026 香港巴士便利站 | 資料僅供參考，實際情況以現場為準</p>
       <p style="font-size:0.75rem;color:var(--gray-400);margin-top:4px;" data-i18n="source_bus">資料來源：運輸署 巴士到站時間預報系統</p>
       <div class="footer-links">
         <a href="index.html" data-i18n="footer_home">首頁</a>
-        <a href="map.html" data-i18n="footer_map">🗺️ 地圖</a>
-        <a href="list.html" data-i18n="footer_list">📋 列表</a>
-        <a href="routes.html" data-i18n="footer_routes">🚌 路線</a>
-        <a href="plan.html" data-i18n="footer_plan">🧭 規劃</a>
-        <a href="eta.html" data-i18n="footer_eta">⏱ 到站</a>
-        <a href="fav.html" data-i18n="footer_fav">⭐ 常用</a>
+        <a href="map.html" data-i18n="footer_map">&#x1f5fa; 地圖</a>
+        <a href="list.html" data-i18n="footer_list">&#x1f4cb; 列表</a>
+        <a href="routes.html" data-i18n="footer_routes">&#x1f68c; 路線</a>
+        <a href="eta.html" data-i18n="footer_eta">&#x23f1; 到站</a>
+        <a href="plan.html">&#x1f9ed; 規劃</a>
+        <a href="fav.html" data-i18n="footer_fav">&#x2b50; 常用</a>
       </div>
     </div>
   </footer>
-
   <script>
-    var fromSid = null, toSid = null;
-    var stopIndex = []; // {id, name}
-    var activeField = null;
-    var maxTransfers = 1;
+  (function() {
+    var stopsData = null;
+    var graph = null;
+    var mtrData = null;
 
-    // Load stop index for autocomplete
-    fetch('data/bus-stops-index.json').then(function(r) { return r.json(); }).then(function(data) {
-      stopIndex = [];
-      for (var id in data) {
-        var s = data[id];
-        if (s.name_tc) stopIndex.push({ id: id, name: s.name_tc });
-      }
-      stopIndex.sort(function(a, b) { return a.name.localeCompare(b.name, 'zh-Hant'); });
-    });
-
-    function showSuggest(input, list, q) {
-      q = q.trim().toLowerCase();
-      list.innerHTML = '';
-      if (q.length < 1) { list.style.display = 'none'; return; }
-      var matches = stopIndex.filter(function(s) {
-        return s.name.toLowerCase().indexOf(q) !== -1;
-      }).slice(0, 20);
-      if (matches.length === 0) { list.style.display = 'none'; return; }
-      matches.forEach(function(m) {
-        var div = document.createElement('div');
-        div.className = 'plan-suggest-item';
-        div.textContent = m.name;
-        div.addEventListener('mousedown', function(e) {
-          e.preventDefault();
-          input.value = m.name;
-          list.style.display = 'none';
-          if (input.id === 'plan-from') fromSid = m.id; else toSid = m.id;
-        });
-        list.appendChild(div);
-      });
-      list.style.display = 'block';
+    function esc(s) {
+      if (!s) return '';
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    function bindAutocomplete(inputId, suggestId, isFrom) {
-      var input = document.getElementById(inputId);
-      var list = document.getElementById(suggestId);
-      input.addEventListener('focus', function() { activeField = input; });
-      input.addEventListener('input', function() {
-        if (isFrom) fromSid = null; else toSid = null;
-        showSuggest(input, list, input.value);
-      });
-      document.addEventListener('click', function(e) {
-        if (!input.contains(e.target) && !list.contains(e.target)) list.style.display = 'none';
-      });
-    }
-
-    bindAutocomplete('plan-from', 'plan-from-suggest', true);
-    bindAutocomplete('plan-to', 'plan-to-suggest', false);
-
-    document.querySelectorAll('.plan-transfer-btn').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        maxTransfers = parseInt(btn.getAttribute('data-max'), 10);
-        document.querySelectorAll('.plan-transfer-btn').forEach(function(b) { b.classList.remove('active'); });
-        btn.classList.add('active');
-      });
+    Promise.all([
+      fetch('data/bus-stops-index.json').then(function(r){return r.json();}),
+      fetch('data/bus-routes-index.json').then(function(r){return r.json();}),
+      fetch('data/mtr-stations.json').then(function(r){return r.json();})
+    ]).then(function(d) {
+      stopsData = d[0];
+      mtrData = d[2];
+      graph = RoutePlanner.buildGraph(d[1], stopsData, mtrData);
     });
 
-    document.getElementById('plan-submit').addEventListener('click', function() {
-      if (!fromSid || !toSid) {
-        document.getElementById('plan-result').className = 'plan-result show';
-        document.getElementById('plan-result').innerHTML = '<div class="plan-error">⚠️ 請先從建議清單中選擇起點與終點車站</div>';
+    document.getElementById('plan-swap').addEventListener('click', function() {
+      var s = document.getElementById('plan-start');
+      var e = document.getElementById('plan-end');
+      var tmp = s.value; s.value = e.value; e.value = tmp;
+    });
+
+    document.getElementById('plan-go').addEventListener('click', doSearch);
+    document.getElementById('plan-start').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } });
+    document.getElementById('plan-end').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } });
+
+    function doSearch() {
+      if (!graph || !stopsData || !mtrData) { alert('資料載入中，請稍後...'); return; }
+      var startQ = document.getElementById('plan-start').value.trim();
+      var endQ = document.getElementById('plan-end').value.trim();
+      if (!startQ || !endQ) { alert('請輸入出發地和目的地'); return; }
+
+      var startIds = [];
+      var startNames = [];
+      var busMatches = RoutePlanner.findStops(startQ, stopsData);
+      busMatches.slice(0, 8).forEach(function(m) { startIds.push(m.id); startNames.push(RoutePlanner.stripCode(m.name_tc)); });
+      var mtrMatches = RoutePlanner.findMTRStations(startQ, mtrData);
+      mtrMatches.forEach(function(m) { startIds.push('mtr_' + m.name); startNames.push(m.name + ' 站'); });
+
+      var endIds = [];
+      var endNames = [];
+      var busMatches2 = RoutePlanner.findStops(endQ, stopsData);
+      busMatches2.slice(0, 8).forEach(function(m) { endIds.push(m.id); endNames.push(RoutePlanner.stripCode(m.name_tc)); });
+      var mtrMatches2 = RoutePlanner.findMTRStations(endQ, mtrData);
+      mtrMatches2.forEach(function(m) { endIds.push('mtr_' + m.name); endNames.push(m.name + ' 站'); });
+
+      if (startIds.length === 0 || endIds.length === 0) {
+        document.getElementById('plan-results').innerHTML =
+          '<div class="plan-empty"><div class="plan-empty-icon">&#x1f50d;</div><div class="plan-empty-text">找不到符合的地點。<br>請嘗試其他關鍵字，例如地區名、巴士站名或地鐵站名。</div></div>';
         return;
       }
-      runPlan();
-    });
 
-    function runPlan() {
-      var result = document.getElementById('plan-result');
-      result.className = 'plan-result show';
-      result.innerHTML = '<div class="plan-error">正在搜尋路線方案…</div>';
+      document.getElementById('plan-results').innerHTML = '<div class="plan-loading">&#x1f504; 搜尋中...</div>';
 
-      PLAN.loadData(function() {
-        var fromName = PLAN.stopName(fromSid);
-        var toName = PLAN.stopName(toSid);
-        var planResult = PLAN.plan(fromSid, toSid);
-
-        if (planResult.error === 'same') {
-          result.innerHTML = '<div class="plan-error">⚠️ 起點與終點相同</div>';
-          return;
-        }
-
-        var plans = (planResult.plans || []).filter(function(p) { return p.transfers <= maxTransfers; });
-        if (plans.length === 0) {
-          result.innerHTML = '<div class="plan-empty">😔 找不到 ' + (maxTransfers === 1 ? '1 次轉乘' : '2 次轉乘') + ' 以內的巴士路線方案，請嘗試增加轉乘次數或改用其他交通方式。</div>';
-          return;
-        }
-
-        var html = '<div class="plan-card-head" style="padding:0 4px 10px;"><strong style="color:var(--gray-800);font-size:1rem;">' + fromName + ' → ' + toName + '</strong></div>';
-        plans.forEach(function(p, idx) {
-          var tagText = p.transfers === 0 ? '直達' : (p.transfers === 1 ? '1 次轉乘' : '2 次轉乘');
-          html += '<div class="plan-card transfer-' + p.transfers + '">' +
-            '<div class="plan-card-head"><span class="tag">方案 ' + (idx + 1) + ' · ' + tagText + '</span></div>';
-          p.legs.forEach(function(leg, li) {
-            html += '<div class="plan-leg">' +
-              '<span class="plan-leg-route">' + leg.route + '</span>' +
-              '<div class="plan-leg-info"><strong>' + leg.fromName + '</strong> → <strong>' + leg.toName + '</strong><br><span style="font-size:0.75rem;color:var(--gray-400);">第 ' + leg.fromIdx + '–' + leg.toIdx + ' 站</span></div>' +
-            '</div>';
-            if (li < p.legs.length - 1) html += '<div class="plan-swap">⇅ 於 ' + leg.toName + ' 轉乘</div>';
-          });
-          var firstRoute = p.legs[0].route;
-          html += '<a class="plan-eta-link" href="eta.html" onclick="localStorage.setItem(\'eta_last_route\',\'' + firstRoute + '\');">⏱ 查看 ' + firstRoute + ' 即時到站 →</a>';
-          html += '</div>';
-        });
-        result.innerHTML = html;
-      });
+      setTimeout(function() {
+        var rawResults = RoutePlanner.findAllRoutes(startIds, endIds, graph);
+        renderResults(rawResults, startNames.slice(0,3), endNames.slice(0,3));
+      }, 50);
     }
-  </script>
 
+    function renderResults(rawResults, startNames, endNames) {
+      var container = document.getElementById('plan-results');
+      if (!rawResults || rawResults.length === 0) {
+        container.innerHTML = '<div class="plan-empty"><div class="plan-empty-icon">&#x1f68c;</div><div class="plan-empty-text">找不到合適的路線。<br>請嘗試其他關鍵字，或查看<a href="routes.html">路線目錄</a>。</div></div>';
+        return;
+      }
+
+      var html = '';
+      for (var i = 0; i < rawResults.length; i++) {
+        var result = rawResults[i];
+        var formatted = RoutePlanner.formatResult(result);
+        var hasBus = false, hasMTR = false;
+        formatted.segments.forEach(function(s) { if (s.type === 'bus') hasBus = true; if (s.type === 'mtr') hasMTR = true; });
+        var badgeText, badgeClass;
+        if (!hasMTR) { badgeText = '&#x1f68c; 巴士'; badgeClass = 'direct'; }
+        else if (!hasBus) { badgeText = '&#x1f687; 地鐵'; badgeClass = 'transfer'; }
+        else { badgeText = '&#x1f68c;&#x1f687; 巴士+地鐵'; badgeClass = 'transfer'; }
+
+        html += '<div class="plan-result-card">';
+        html += '<div class="plan-result-header">';
+        html += '<span class="plan-result-badge ' + badgeClass + '">' + badgeText + '</span>';
+        html += '<span class="plan-result-stops">' + formatted.segments.length + ' 段</span>';
+        html += '</div>';
+
+        for (var j = 0; j < formatted.segments.length; j++) {
+          var seg = formatted.segments[j];
+          if (j > 0) {
+            html += '<div class="plan-separator"><span class="plan-separator-line"></span>&#x1f504; 轉乘<span class="plan-separator-line"></span></div>';
+          }
+          html += '<div class="plan-segment">';
+          if (seg.type === 'bus') {
+            html += '<div class="plan-segment-route">&#x1f68c; ' + esc(seg.route) + '</div>';
+          } else if (seg.type === 'mtr') {
+            html += '<div class="plan-segment-route">&#x1f687; ' + esc(seg.route) + '線</div>';
+          } else if (seg.type === 'transfer' || seg.type === 'walk') {
+            html += '<div class="plan-segment-route">&#x1f6b6; 步行</div>';
+          }
+          html += '<div class="plan-segment-stops">';
+          for (var k = 0; k < seg.stops.length; k++) {
+            var stop = seg.stops[k];
+            var dotClass = '';
+            var nameClass = '';
+            if (k === 0) { dotClass = 'on'; nameClass = 'highlight'; }
+            else if (k === seg.stops.length - 1) { dotClass = j === formatted.segments.length - 1 ? 'dest-dot' : 'end-dot'; nameClass = 'highlight'; }
+            var icon = seg.type === 'mtr' ? '&#x1f687; ' : '';
+            html += '<div class="plan-stop"><span class="plan-stop-dot ' + dotClass + '"></span><span class="plan-stop-name ' + nameClass + '">' + icon + esc(stop.name) + '</span></div>';
+          }
+          html += '</div></div>';
+        }
+        html += '</div>';
+      }
+      container.innerHTML = html;
+    }
+  })();
+  </script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
