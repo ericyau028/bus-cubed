@@ -1659,9 +1659,12 @@ nav.nav-shrunk .nav-brand {
 }
 .track-bus.bus-2 { opacity: .78; }
 .track-bus.bus-2 .track-bus-icon { width: 26px; height: 26px; border-color: var(--skyblue); font-size: .82rem; }
-.track-bus.bus-3 { opacity: .55; }
+.track-bus.bus-2 .track-bus-tag { font-size: .55rem; }
+.track-bus.bus-3 { opacity: .62; }
 .track-bus.bus-3 .track-bus-icon { width: 24px; height: 24px; border-style: dashed; font-size: .75rem; }
-.track-bus.bus-3 .track-bus-tag { display: none; }
+.track-bus.bus-3 .track-bus-tag { font-size: .52rem; }
+.track-bus.is-waiting .track-bus-icon { border-style: dotted; opacity: .9; }
+.track-bus:not(.is-waiting) .track-bus-tag { background: var(--blue-light); }
 @keyframes bus-bob {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-3px); }
