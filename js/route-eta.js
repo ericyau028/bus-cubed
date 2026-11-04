@@ -11,8 +11,7 @@
   function formatMins(e) {
     var now = new Date();
     var mins = Math.round((new Date(e.eta) - now) / 60000);
-    if (mins <= 0) return { text: '即將', cls: 'red' };
-    if (mins <= 2) return { text: '即將到站', cls: 'amber' };
+    if (mins <= 0) { mins = 0; return { text: mins + ' 分', cls: 'red' }; }
     return { text: mins + ' 分', cls: 'green' };
   }
 
