@@ -64,7 +64,37 @@
 .eta-quick-chip.pinned .chip-pin{opacity:1;color:var(--blue)}
 .eta-refresh-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:.75rem;color:var(--gray-400)}
 .eta-refresh-btn{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-sm);padding:6px 14px;font-family:inherit;font-size:.75rem;font-weight:600;color:var(--gray-600);cursor:pointer;transition:all var(--transition)}
-.eta-refresh-btn:hover{background:var(--kraft-bg2);border-color:var(--kraft)}</style>
+.eta-refresh-btn:hover{background:var(--kraft-bg2);border-color:var(--kraft)}
+.eta-segmented{display:flex;gap:4px;background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-full);padding:4px;margin:12px auto 0;max-width:280px}
+.eta-seg-item{flex:1;text-align:center;padding:7px 10px;border-radius:var(--radius-full);font-size:.8rem;font-weight:600;color:var(--gray-500);text-decoration:none;transition:all var(--transition);min-height:32px;display:flex;align-items:center;justify-content:center}
+.eta-seg-item:hover{color:var(--blue)}
+.eta-seg-item.active{background:var(--blue);color:#fff}
+.eta-stop-item{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow-sm);border-left:3px solid var(--gray-200);overflow:hidden;transition:box-shadow var(--transition),border-color var(--transition)}
+.eta-stop-item:has(.eta-stop-toggle[aria-expanded="true"]){border-left-color:var(--blue);box-shadow:var(--shadow)}
+.eta-stop-toggle{display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;background:none;border:none;font-family:inherit;text-align:left;cursor:pointer;min-height:44px;-webkit-tap-highlight-color:transparent}
+.eta-stop-toggle:hover{background:var(--gray-50)}
+.eta-stop-chevron{font-size:.7rem;color:var(--gray-300);transition:transform var(--transition);flex:0 0 auto}
+.eta-stop-toggle[aria-expanded="true"] .eta-stop-chevron{transform:rotate(180deg);color:var(--blue)}
+.eta-stop-detail{padding:0 16px 14px;border-top:1px dashed var(--gray-200);margin:0 0 0 0;animation:eta-detail-in .22s ease}
+@keyframes eta-detail-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.eta-detail-en{font-size:.75rem;color:var(--gray-400);padding-top:10px;letter-spacing:.02em}
+.eta-detail-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.eta-detail-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:var(--radius-full);background:var(--gray-100);color:var(--gray-600);font-size:.72rem;font-weight:600;border:none;font-family:inherit}
+.eta-detail-locate{cursor:pointer;background:var(--blue-light);color:var(--blue-dark);min-height:28px}
+.eta-detail-section{margin-top:10px}
+.eta-detail-label{font-size:.7rem;font-weight:700;color:var(--gray-400);letter-spacing:.04em;margin-bottom:6px}
+.eta-detail-routes{display:flex;flex-wrap:wrap;gap:5px}
+.eta-route-chip{display:inline-block;padding:3px 9px;border-radius:6px;background:var(--gray-800);color:#fff;font-size:.72rem;font-weight:700;text-decoration:none;transition:background var(--transition)}
+.eta-route-chip:hover{background:var(--blue)}
+.eta-route-chip.more{background:var(--gray-300);color:var(--gray-600)}
+.eta-detail-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.eta-detail-btn{flex:1 1 auto;display:inline-flex;align-items:center;justify-content:center;padding:9px 12px;border-radius:var(--radius-sm);border:1.5px solid var(--gray-200);background:var(--white);color:var(--gray-700);font-family:inherit;font-size:.78rem;font-weight:700;cursor:pointer;text-decoration:none;min-height:40px;transition:all var(--transition);white-space:nowrap}
+.eta-detail-btn:hover{border-color:var(--kraft);background:var(--kraft-bg2)}
+.eta-detail-btn.is-mine{border-color:var(--amber);background:#fef3c7;color:var(--amber)}
+.eta-detail-btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.eta-detail-btn.primary:hover{background:var(--blue-dark);border-color:var(--blue-dark)}
+@media (max-width:379px){.eta-detail-btn{font-size:.72rem;padding:8px 8px}}
+</style>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-132PFXDSM9"></script>
   <script src="js/main.js" defer></script>
   <script>window.TRAFFIC_LANG = { title: '🚨 特別交通消息', loading: '載入特別交通消息...' };</script>
@@ -106,6 +136,10 @@
       </div>
       <h2>⏱ 即時巴士到站</h2>
       <p data-i18n="eta_subtitle">查詢巴士即時到站時間</p>
+      <div class="eta-segmented">
+        <span class="eta-seg-item active" data-i18n="track_tab_list">📋 列表</span>
+        <a class="eta-seg-item" href="track.html" id="eta-seg-track" data-i18n="track_tab_track">🚌 追蹤</a>
+      </div>
     </div>
   </section>
 
@@ -343,6 +377,7 @@
 
     fetchETA(route, currentBound);
     startRefreshTimer(route);
+    updateTrackLink();
   }
 
   window.switchDirection = function(bound) {
@@ -362,6 +397,7 @@
     }
     fetchETA(currentRoute, bound);
     startRefreshTimer(currentRoute);
+    updateTrackLink();
   };
 
   function fetchETA(route, bound) {
@@ -414,10 +450,14 @@
             });
           }
 
-          h += '<div class="eta-stop-row">' +
-            '<span class="eta-stop-seq">' + (i + 1) + '.</span>' +
-            '<span class="eta-stop-name">' + esc(s.name_tc || '') + '</span>' +
-            '<span class="eta-stop-times">' + etaHtml + '</span>' +
+          h += '<div class="eta-stop-item" data-seq="' + esc(String(s.seq)) + '" data-stop-id="' + esc(s.stop_id || '') + '" data-name-tc="' + esc(s.name_tc || '') + '">' +
+            '<button type="button" class="eta-stop-row eta-stop-toggle" aria-expanded="false">' +
+              '<span class="eta-stop-seq">' + (i + 1) + '.</span>' +
+              '<span class="eta-stop-name">' + esc(s.name_tc || '') + '</span>' +
+              '<span class="eta-stop-times">' + etaHtml + '</span>' +
+              '<span class="eta-stop-chevron" aria-hidden="true">▾</span>' +
+            '</button>' +
+            '<div class="eta-stop-detail" hidden></div>' +
           '</div>';
         });
         etaStopList.innerHTML = h;
@@ -426,6 +466,168 @@
       .catch(function() {
         etaStopList.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray-500);">⚠️ 無法取得到站時間</div>';
       });
+  }
+
+  /* ---------- stop detail panel (clickable stops) ---------- */
+  var stopsMinPromise = null;
+  var userLoc = null;
+
+  function loadStopsMin() {
+    if (!stopsMinPromise) {
+      stopsMinPromise = fetch('data/bus-stops-min.json')
+        .then(function(r) { return r.json(); })
+        .catch(function() { return {}; });
+    }
+    return stopsMinPromise;
+  }
+
+  function haversineM(lat1, lon1, lat2, lon2) {
+    var R = 6371000;
+    var toRad = Math.PI / 180;
+    var dLat = (lat2 - lat1) * toRad;
+    var dLon = (lon2 - lon1) * toRad;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  function getMyStop() {
+    try { return JSON.parse(localStorage.getItem('bus_my_stop') || 'null'); } catch (e) { return null; }
+  }
+
+  function setMyStop(route, bound, seq, stopId, nameTc) {
+    try {
+      localStorage.setItem('bus_my_stop', JSON.stringify({
+        route: route, bound: bound, seq: seq, stop_id: stopId, name: nameTc
+      }));
+    } catch (e) {}
+  }
+
+  function askLocation(cb) {
+    if (!navigator.geolocation) { cb(false); return; }
+    navigator.geolocation.getCurrentPosition(function(pos) {
+      userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy };
+      cb(true);
+    }, function() {
+      cb(false);
+    }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 });
+  }
+
+  function toggleStopDetail(item) {
+    var btn = item.querySelector('.eta-stop-toggle');
+    var panel = item.querySelector('.eta-stop-detail');
+    if (!panel) return;
+    var open = btn.getAttribute('aria-expanded') === 'true';
+    if (open) {
+      btn.setAttribute('aria-expanded', 'false');
+      panel.hidden = true;
+      return;
+    }
+    btn.setAttribute('aria-expanded', 'true');
+    panel.hidden = false;
+    if (panel.dataset.filled === '1') return;
+
+    var seq = item.getAttribute('data-seq');
+    var stopId = item.getAttribute('data-stop-id');
+    var nameTc = item.getAttribute('data-name-tc');
+    var myStop = getMyStop();
+    var isMine = myStop && myStop.route === currentRoute && String(myStop.seq) === String(seq);
+
+    loadStopsMin().then(function(stops) {
+      var info = stops[stopId] || ['', '', '', ''];
+      var nameEn = info[0] || '';
+      var lat = parseFloat(info[1]);
+      var lng = parseFloat(info[2]);
+      var routesHere = info[3] ? info[3].split(',').filter(Boolean) : [];
+
+      var distHtml = '';
+      if (userLoc && !isNaN(lat) && !isNaN(lng)) {
+        var d = haversineM(userLoc.lat, userLoc.lng, lat, lng);
+        if (d < 1000) {
+          distHtml = '<span class="eta-detail-chip">' + LANG.t('track_distance', { n: Math.round(d) }) + '</span>';
+        }
+      } else if (!isNaN(lat) && !isNaN(lng)) {
+        distHtml = '<button type="button" class="eta-detail-chip eta-detail-locate" data-action="locate">' + LANG.t('track_locate') + '</button>';
+      }
+
+      var routesHtml = routesHere.length
+        ? '<div class="eta-detail-section"><div class="eta-detail-label">' + LANG.t('track_stop_routes') + '</div>' +
+          '<div class="eta-detail-routes">' + routesHere.slice(0, 20).map(function(r) {
+            return '<a class="eta-route-chip" href="eta.html?route=' + encodeURIComponent(r) + '">' + esc(r) + '</a>';
+          }).join('') + (routesHere.length > 20 ? '<span class="eta-route-chip more">+' + (routesHere.length - 20) + '</span>' : '') +
+          '</div></div>'
+        : '';
+
+      var navUrl = (!isNaN(lat) && !isNaN(lng))
+        ? 'https://www.google.com/maps/dir/?api=1&destination=' + lat + ',' + lng
+        : 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(nameTc + ' 巴士站 香港');
+
+      var actions =
+        '<div class="eta-detail-actions">' +
+          '<button type="button" class="eta-detail-btn' + (isMine ? ' is-mine' : '') + '" data-action="set-stop">' +
+            (isMine ? '⭐ ' + LANG.t('track_my_stop') : LANG.t('track_set_stop')) + '</button>' +
+          '<a class="eta-detail-btn" href="' + navUrl + '" target="_blank" rel="noopener">' + LANG.t('track_navigate') + '</a>' +
+          '<a class="eta-detail-btn primary" href="track.html?route=' + encodeURIComponent(currentRoute || '') + '&bound=' + encodeURIComponent(currentBound || 'O') + '&seq=' + encodeURIComponent(seq) + '">' + LANG.t('track_view_track') + '</a>' +
+        '</div>';
+
+      panel.innerHTML =
+        (nameEn ? '<div class="eta-detail-en">' + esc(nameEn) + '</div>' : '') +
+        (distHtml ? '<div class="eta-detail-chips">' + distHtml + '</div>' : '') +
+        routesHtml +
+        actions;
+      panel.dataset.filled = '1';
+      panel.dataset.seq = seq;
+      panel.dataset.name = nameTc;
+
+      var locateBtn = panel.querySelector('[data-action="locate"]');
+      if (locateBtn) {
+        locateBtn.addEventListener('click', function() {
+          var lb = this;
+          lb.textContent = LANG.t('track_locating');
+          askLocation(function(ok) {
+            if (!ok) { lb.textContent = LANG.t('track_loc_denied'); return; }
+            panel.dataset.filled = '0';
+            panel.hidden = true;
+            var b = item.querySelector('.eta-stop-toggle');
+            if (b) b.setAttribute('aria-expanded', 'false');
+            toggleStopDetail(item);
+          });
+        });
+      }
+
+      panel.querySelector('[data-action="set-stop"]').addEventListener('click', function() {
+        var s = this;
+        var wasMine = s.classList.contains('is-mine');
+        if (wasMine) {
+          try { localStorage.removeItem('bus_my_stop'); } catch (e) {}
+          s.classList.remove('is-mine');
+          s.textContent = LANG.t('track_set_stop');
+        } else {
+          setMyStop(currentRoute, currentBound, seq, stopId, nameTc);
+          s.classList.add('is-mine');
+          s.textContent = '⭐ ' + LANG.t('track_my_stop');
+        }
+      });
+    });
+  }
+
+  if (etaStopList) {
+    etaStopList.addEventListener('click', function(e) {
+      var item = e.target.closest('.eta-stop-item');
+      if (!item) return;
+      toggleStopDetail(item);
+    });
+  }
+
+  function updateTrackLink() {
+    var seg = document.getElementById('eta-seg-track');
+    if (!seg) return;
+    if (currentRoute) {
+      seg.href = 'track.html?route=' + encodeURIComponent(currentRoute) + '&bound=' + encodeURIComponent(currentBound || 'O');
+    } else {
+      seg.href = 'track.html';
+    }
   }
 
   function startRefreshTimer(route) {
@@ -488,9 +690,7 @@
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-      navigator.serviceWorker.register('sw.js').catch(function(err) {
-        console.warn('SW registration failed:', err);
-      });
+      navigator.serviceWorker.register('sw.js').catch(function() {});
     });
   }
 </script>

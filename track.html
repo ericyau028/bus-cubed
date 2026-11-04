@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>🚌 實時追蹤 | 香港巴士便利站</title>
+  <meta name="description" content="香港巴士實時追蹤 - 在地圖式路線圖上查看巴士目前位置、已到哪一站、距離你的站還有多少分鐘。支援 KMB 九巴及 LWB 龍運巴士全港路線。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="google-adsense-account" content="ca-pub-4900630860092971">
+  <meta name="theme-color" content="#c4956a">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-132PFXDSM9"></script>
+  <script src="js/main.js" defer></script>
+  <script src="js/i18n.js" defer></script>
+  <script src="js/animations.js" defer></script>
+  <script src="js/track.js" defer></script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4900630860092971" crossorigin="anonymous"></script>
+</head>
+<body class="track-page">
+  <div class="top-bar">
+    <div class="container">
+      <a href="#" data-lang="zh-Hant">繁體</a>
+      <a href="#" data-lang="zh-Hans">簡體</a>
+      <a href="#" data-lang="en">English</a>
+    </div>
+  </div>
+
+  <nav>
+    <div class="container">
+      <a href="index.html" class="nav-brand">🚌 香港<span>巴士站</span></a>
+      <button class="nav-toggle" aria-label="選單">☰</button>
+      <div class="nav-menu">
+        <a href="index.html"><span class="nav-icon">🏠</span> <span data-i18n="nav_home">首頁</span></a>
+        <a href="map.html"><span class="nav-icon">🗺️</span> <span data-i18n="nav_map">地圖</span></a>
+        <a href="list.html"><span class="nav-icon">📋</span> <span data-i18n="nav_list">列表</span></a>
+        <a href="routes.html"><span class="nav-icon">🚌</span> <span data-i18n="nav_routes">路線</span></a>
+        <a href="plan.html"><span class="nav-icon">🧭</span> <span data-i18n="nav_plan">規劃</span></a>
+        <a href="eta.html"><span class="nav-icon">⏱</span> <span data-i18n="nav_eta">到站</span></a>
+        <a href="fav.html"><span class="nav-icon">⭐</span> <span data-i18n="nav_bus_fav">常用</span></a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="page-header">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="index.html" data-i18n="breadcrumb_home">首頁</a> &gt; <span data-i18n="track_title">🚌 實時追蹤</span>
+      </div>
+      <h2 data-i18n="track_title">🚌 實時追蹤</h2>
+      <p data-i18n="track_subtitle">睇住巴士去到邊，仲有幾耐到你站</p>
+      <div class="eta-segmented">
+        <a class="eta-seg-item" href="eta.html" data-i18n="track_tab_list">📋 列表</a>
+        <span class="eta-seg-item active" data-i18n="track_tab_track">🚌 追蹤</span>
+      </div>
+    </div>
+  </section>
+
+  <main class="container">
+    <div id="traffic-news" class="traffic-news" style="display:none;"></div>
+
+    <div id="track-loading" class="track-loading">
+      <div class="skeleton" style="height:60px;border-radius:12px;margin-bottom:12px;"></div>
+      <div class="skeleton" style="height:120px;border-radius:12px;margin-bottom:12px;"></div>
+      <div class="skeleton" style="height:300px;border-radius:12px;"></div>
+    </div>
+
+    <div id="track-missing" class="track-empty" hidden>
+      <p data-i18n="track_route_missing">找不到此路線</p>
+      <a class="track-back-btn" href="eta.html" data-i18n="track_tab_list">📋 列表</a>
+    </div>
+
+    <div id="track-app" hidden>
+      <!-- route info -->
+      <div class="track-route-card">
+        <div class="track-route-head">
+          <span id="track-route-number" class="track-route-num">--</span>
+          <span id="track-company-badge" class="route-badge kmb">KMB</span>
+        </div>
+        <div id="track-route-dir" class="track-route-dir"></div>
+        <div id="track-direction-toggle" class="eta-direction-toggle"></div>
+      </div>
+
+      <!-- HERO: time to my stop -->
+      <div class="track-hero" id="track-hero">
+        <div class="track-hero-main">
+          <div class="track-hero-num" id="track-hero-num">--</div>
+          <div class="track-hero-label" id="track-hero-label"></div>
+        </div>
+        <div class="track-hero-sub" id="track-hero-sub"></div>
+        <div class="track-hero-actions">
+          <button type="button" class="track-locate-btn" id="track-locate-btn">
+            <span data-i18n="track_locate">📍 定位我的位置</span>
+          </button>
+          <a class="track-hero-link" href="eta.html" id="track-list-link" data-i18n="track_tab_list">📋 列表</a>
+        </div>
+        <div class="track-hero-progress"><div class="track-hero-progress-fill" id="track-hero-progress"></div></div>
+      </div>
+
+      <!-- track rail -->
+      <div class="track-rail-card">
+        <div class="track-rail-head">
+          <span class="track-rail-title" data-i18n="track_current">現在位置</span>
+          <button type="button" class="track-toggle-btn" id="track-collapse-btn"></button>
+        </div>
+        <div class="track-rail-scroll" id="track-rail-scroll">
+          <div class="track-rail" id="track-rail">
+            <div class="track-progress-line" id="track-progress-line"></div>
+            <div class="track-buses" id="track-buses"></div>
+          </div>
+        </div>
+        <p class="track-note" data-i18n="track_note">巴士位置依到站時間推算，非車輛實時 GPS</p>
+      </div>
+
+      <div class="ad-slot" style="min-height:100px;text-align:center;margin:12px 0;">
+        <ins class="adsbygoogle" style="display:block;min-height:100px;" data-ad-client="ca-pub-4900630860092971" data-ad-slot="6428216085" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p data-i18n="footer_copyright">© 2026 香港巴士便利站 | 資料僅供參考，實際情況以現場為準</p>
+      <p style="font-size:0.75rem;color:var(--gray-400);margin-top:4px;" data-i18n="source_bus">資料來源：運輸署 巴士到站時間預報系統</p>
+      <div class="footer-links">
+        <a href="index.html" data-i18n="footer_home">首頁</a>
+        <a href="map.html" data-i18n="footer_map">🗺️ 地圖</a>
+        <a href="list.html" data-i18n="footer_list">📋 列表</a>
+        <a href="routes.html" data-i18n="footer_routes">🚌 路線</a>
+        <a href="plan.html" data-i18n="footer_plan">🧭 規劃</a>
+        <a href="eta.html" data-i18n="footer_eta">⏱ 到站</a>
+        <a href="fav.html" data-i18n="footer_fav">⭐ 常用</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('sw.js').catch(function() {});
+      });
+    }
+  </script>
+</body>
+</html>

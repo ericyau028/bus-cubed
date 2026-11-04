@@ -4,7 +4,7 @@
  *  - 資料檔 (data/*.json)：Network First（有網路即更新，離線用快取）
  *  - 外部 API：僅網路（不快取動態數據）
  */
-const CACHE_NAME = 'bus-cubed-v1';
+const CACHE_NAME = 'bus-cubed-v2';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -12,6 +12,8 @@ const STATIC_ASSETS = [
   './list.html',
   './routes.html',
   './eta.html',
+  './track.html',
+  './plan.html',
   './fav.html',
   './css/style.css',
   './css/bus-fav.css',
@@ -21,6 +23,9 @@ const STATIC_ASSETS = [
   './js/animations.js',
   './js/bus-fav.js',
   './js/eta.js',
+  './js/route-eta.js',
+  './js/plan.js',
+  './js/track.js',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png'
