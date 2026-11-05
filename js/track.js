@@ -1,6 +1,17 @@
-/* track.js — 實時巴士追蹤：路線軌跡 + 巴士位置推算動畫
- * 資料來源：data/bus-routes-index.json（站序）+ 運輸署 route-eta API（到站時間）
- * 限制：API 只提供「預測到站時間」，非車輛 GPS；位置由相鄰站 ETA 線性內插推算。
+/* track.js — 實時巴士追蹤：路線軌跡 + 巴士位置推算
+ *
+ * 資料來源：運輸署 KMB route-eta API
+ *   - API 對「每一站」回傳接下來 1–3 班車的預計到站時間（eta_seq 是「該站」的班次序，非固定車輛身份）
+ *   - 已駛過的站不會有 ETA（null 或省略）
+ *
+ * 定位原理（重點）：
+ *   1. 取每站的「最小 ETA」（下班車幾時到）→ m[seq]
+ *   2. 沿站序掃描，當 m 出現「下跌」（例如第7站 35 分鐘、第8站 2 分鐘）
+ *      → 代表有一班巴士剛過了第7站、正前往第8站 → 該處放一個巴士標記
+ *   3. 標記位置 = 該段起站 S 減去剩餘時間佔比（剩 0 分鐘 = 正在 S 站；剩半程 = S 與 S-1 之間）
+ *   4. 起點總站若有多班排隊（多個 ETA），額外放置等待中的標記
+ *
+ * 限制：API 只提供「預測到站時間」，非車輛 GPS；位置為推算值。
  */
 (function() {
   'use strict';
@@ -9,6 +20,9 @@
   var REFRESH_MS = 10000;
   var COLLAPSE_THRESHOLD = 30;
   var COLLAPSE_SPAN = 3;
+  var STALE_MS = 60000;            // 超過 1 分鐘的過期 ETA 視為失效
+  var QUEUE_GAP_MS = 5 * 60000;    // 總站排隊班次最小間隔
+  var MAX_MARKERS = 6;
 
   var allRoutes = [];
   var currentRoute = null;
@@ -16,17 +30,15 @@
   var nodes = [];
   var seqList = [];
   var rowH = 56;
-  var anchors = {};
-  var busCount = 0;
+  var etaMap = {};       // seq -> [ts, ts, ts]（升冪）
+  var markers = [];      // [{ pos, remain, queued, label }]
   var myStop = null;
   var userLoc = null;
-  var stopsMin = null;
   var stopsMinPromise = null;
   var refreshTimer = null;
   var rafId = null;
   var isFetching = false;
   var showAll = false;
-  var lastFetchAt = 0;
 
   var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -37,14 +49,12 @@
   var elCompany = document.getElementById('track-company-badge');
   var elRouteDir = document.getElementById('track-route-dir');
   var elDirToggle = document.getElementById('track-direction-toggle');
-  var elHero = document.getElementById('track-hero');
   var elHeroNum = document.getElementById('track-hero-num');
   var elHeroLabel = document.getElementById('track-hero-label');
   var elHeroSub = document.getElementById('track-hero-sub');
   var elHeroProgress = document.getElementById('track-hero-progress');
   var elLocateBtn = document.getElementById('track-locate-btn');
   var elRail = document.getElementById('track-rail');
-  var elRailScroll = document.getElementById('track-rail-scroll');
   var elBuses = document.getElementById('track-buses');
   var elProgressLine = document.getElementById('track-progress-line');
   var elCollapseBtn = document.getElementById('track-collapse-btn');
@@ -84,64 +94,104 @@
     return order.map(function(k) { return map[k]; });
   }
 
-  function buildAnchors(etaRows) {
-    var byBus = {};
-    (etaRows || []).forEach(function(e) {
+  /* 每站收集所有班次的 ETA（升冪） */
+  function buildEtaMap(rows) {
+    var out = {};
+    (rows || []).forEach(function(e) {
       if (e.dir !== currentBound || !e.eta) return;
-      var j = parseInt(e.eta_seq, 10) || 1;
       var seq = parseInt(e.seq, 10);
       var ts = Date.parse(e.eta);
       if (isNaN(seq) || isNaN(ts)) return;
-      if (!byBus[j]) byBus[j] = {};
-      if (!byBus[j][seq] || ts < byBus[j][seq]) byBus[j][seq] = ts;
+      (out[seq] = out[seq] || []).push(ts);
     });
-    var out = {};
-    Object.keys(byBus).forEach(function(j) {
-      var arr = Object.keys(byBus[j]).map(function(s) {
-        return { seq: parseInt(s, 10), t: byBus[j][s] };
-      }).sort(function(a, b) { return a.seq - b.seq; });
-      if (arr.length) out[j] = arr;
+    Object.keys(out).forEach(function(k) {
+      out[k].sort(function(a, b) { return a - b; });
+      // 去掉重複（同站同分）
+      out[k] = out[k].filter(function(v, i, arr) { return i === 0 || v - arr[i - 1] > 30000; });
+      out[k] = out[k].slice(0, 3);
     });
     return out;
   }
 
-  function segAvg(A) {
-    var segs = [];
-    for (var i = 1; i < A.length; i++) {
-      if (A[i].seq > A[i - 1].seq && A[i].t > A[i - 1].t) {
-        segs.push((A[i].t - A[i - 1].t) / (A[i].seq - A[i - 1].seq));
+  /* 核心：由「每站最小 ETA」曲線找出巴士位置
+   *  - ETA 出現明顯下跌 = 有一班巴士剛過站、正前往下一站
+   *  - 下跌門檻採自適應（2 倍中位數行車時間，最少 2 分鐘），避免小波動誤判
+   */
+  function buildMarkers(now) {
+    var m = {};
+    var seqs = [];
+    seqList.forEach(function(s) {
+      var arr = etaMap[s] || [];
+      for (var i = 0; i < arr.length; i++) {
+        if (arr[i] > now - STALE_MS) { m[s] = arr[i]; seqs.push(s); break; }
+      }
+    });
+    if (!seqs.length) return [];
+
+    // 全域中位數行車時間
+    var alldiffs = [];
+    for (var i = 1; i < seqs.length; i++) {
+      var dd = m[seqs[i]] - m[seqs[i - 1]];
+      if (dd > 0) alldiffs.push(dd);
+    }
+    alldiffs.sort(function(a, b) { return a - b; });
+    var medTravel = alldiffs.length ? alldiffs[Math.floor(alldiffs.length / 2)] : 150000;
+    if (medTravel <= 0) medTravel = 150000;
+    var dropThreshold = Math.max(2 * medTravel, 2 * 60000);
+
+    // 1) 依 ETA 下跌切段；每段開頭 = 一班巴士
+    var segStarts = [seqs[0]];
+    for (var j = 1; j < seqs.length; j++) {
+      if (m[seqs[j]] < m[seqs[j - 1]] - dropThreshold) segStarts.push(seqs[j]);
+    }
+
+    var out = [];
+    for (var k = 0; k < segStarts.length; k++) {
+      var S = segStarts[k];
+      var endSeq = (k + 1 < segStarts.length) ? segStarts[k + 1] : (seqs[seqs.length - 1] + 1);
+      var diffs = [];
+      for (var q = 1; q < seqs.length; q++) {
+        var sq = seqs[q];
+        var prevSq = seqs[q - 1];
+        if (sq < S || sq >= endSeq) continue;
+        if (prevSq >= S && m[sq] > m[prevSq]) diffs.push(m[sq] - m[prevSq]);
+      }
+      diffs.sort(function(a, b) { return a - b; });
+      var travel = diffs.length ? diffs[Math.floor(diffs.length / 2)] : medTravel;
+      if (travel <= 0) travel = medTravel;
+
+      var remain = m[S] - now;
+      var frac = remain / travel;
+      if (frac < 0) frac = 0;
+      if (frac > 1) frac = 1;
+      var pos = S - frac;
+      if (pos < seqList[0]) pos = seqList[0];
+      if (pos > seqList[seqList.length - 1]) pos = seqList[seqList.length - 1];
+      out.push({ pos: pos, remain: remain, queued: frac >= 1 });
+    }
+
+    // 2) 總站排隊的額外班次（同一總站有多個未過期 ETA）
+    var firstSeq = seqList[0];
+    var termEtas = (etaMap[firstSeq] || []).filter(function(x) { return x > now - STALE_MS; });
+    var atTerminus = 0;
+    out.forEach(function(x) { if (x.pos <= firstSeq + 0.01) atTerminus++; });
+    for (var z = atTerminus; z < termEtas.length && out.length < MAX_MARKERS; z++) {
+      var gap = z > 0 ? termEtas[z] - termEtas[z - 1] : Infinity;
+      if (gap >= QUEUE_GAP_MS) {
+        out.push({ pos: firstSeq, remain: termEtas[z] - now, queued: true });
       }
     }
-    if (!segs.length) return 150000;
-    segs.sort(function(a, b) { return a - b; });
-    return segs[Math.floor(segs.length / 2)];
-  }
 
-  function position(A, now) {
-    if (!A || !A.length) return null;
-    var first = A[0];
-    var last = A[A.length - 1];
-    var avg = segAvg(A);
-    var maxSeq = seqList.length ? seqList[seqList.length - 1] : 1;
-    var minSeq = seqList.length ? seqList[0] : 0;
-    // API 只回未到站的 ETA：首個 anchor 之前的站都已被巴士駛過
-    // → 下限應為 first.seq - 1（而非總站），否則會把行駛中的巴士錯誤拉回起點
-    var lo = Math.max(minSeq, first.seq - 1);
-    var hi = Math.min(maxSeq, last.seq + 1);
-    var p;
-    if (now < first.t) {
-      p = first.seq - (first.t - now) / avg;
-    } else if (now >= last.t) {
-      p = last.seq + (now - last.t) / avg;
-    } else {
-      var k = 0;
-      while (k < A.length - 1 && now >= A[k + 1].t) k++;
-      var span = A[k + 1].t - A[k].t;
-      var frac = span > 0 ? (now - A[k].t) / span : 1;
-      p = A[k].seq + frac * (A[k + 1].seq - A[k].seq);
+    // 3) 由前到後排序，前三班給標籤
+    out.sort(function(a, b) { return b.pos - a.pos; });
+    out = out.slice(0, MAX_MARKERS);
+    for (var n = 0; n < out.length; n++) {
+      out[n].tier = n + 1;
+      out[n].label = n === 0 ? t('track_next_bus')
+        : (n === 1 ? t('track_second_bus')
+        : (n === 2 ? t('track_third_bus') : ''));
     }
-    if (hi < lo) hi = lo;
-    return Math.min(Math.max(p, lo), hi);
+    return out;
   }
 
   function yOf(p) {
@@ -169,15 +219,16 @@
     var html = '';
     for (var i = 0; i < nodes.length; i++) {
       var n = nodes[i];
-      var name = n.names.join(' ／ ');
-      html += '<div class="track-row" data-i="' + i + '" data-seq="' + n.seq + '" style="height:' + rowH + 'px">' +
+      var cls = 'track-row';
+      if (i === 0) cls += ' is-first';
+      if (i === nodes.length - 1) cls += ' is-last';
+      html += '<div class="' + cls + '" data-i="' + i + '" data-seq="' + n.seq + '" style="height:' + rowH + 'px">' +
         '<span class="track-node" aria-hidden="true"></span>' +
         '<span class="track-seq">' + n.seq + '</span>' +
-        '<span class="track-name">' + esc(name) + '</span>' +
+        '<span class="track-name">' + esc(n.names.join(' ／ ')) + '</span>' +
         '<span class="track-eta" data-eta-seq="' + n.seq + '"></span>' +
       '</div>';
     }
-    // remove old rows but keep progress line + buses overlay
     var old = elRail.querySelectorAll('.track-row');
     for (var k = 0; k < old.length; k++) old[k].parentNode.removeChild(old[k]);
     elRail.insertAdjacentHTML('afterbegin', html);
@@ -192,8 +243,7 @@
     if (!myStop || myStop.route !== currentRoute) return;
     var idx = indexOfSeq(parseInt(myStop.seq, 10));
     if (idx < 0) return;
-    var rows2 = elRail.querySelectorAll('.track-row');
-    if (rows2[idx]) rows2[idx].classList.add('is-mine');
+    if (rows[idx]) rows[idx].classList.add('is-mine');
   }
 
   function applyCollapse() {
@@ -204,9 +254,8 @@
       updateCollapseBtn();
       return;
     }
-    var busIdx = 0;
-    var p1 = anchors['1'] ? position(anchors['1'], Date.now()) : null;
-    if (p1 !== null) busIdx = Math.floor(indexOfSeq(Math.floor(p1)));
+    var front = markers.length ? markers[0].pos : seqList[0];
+    var busIdx = indexOfSeq(Math.floor(front));
     if (busIdx < 0) busIdx = 0;
     var myIdx = (myStop && myStop.route === currentRoute) ? indexOfSeq(parseInt(myStop.seq, 10)) : -1;
     var lo = Math.max(0, busIdx - COLLAPSE_SPAN);
@@ -230,73 +279,52 @@
     elCollapseBtn.textContent = showAll ? t('track_show_nearby') : t('track_show_all', { n: nodes.length });
   }
 
-  function busLabel(j) {
-    if (String(j) === '1') return t('track_next_bus');
-    if (String(j) === '2') return t('track_second_bus');
-    if (String(j) === '3') return t('track_third_bus');
-    return '#' + j;
-  }
-
-  function renderBuses() {
+  function renderMarkerEls() {
     var html = '';
-    var keys = Object.keys(anchors).sort(function(a, b) { return a - b; });
-    busCount = keys.length;
-    for (var i = 0; i < keys.length; i++) {
-      var j = keys[i];
-      var cls = 'track-bus bus-' + j;
-      html += '<div class="' + cls + '" data-j="' + j + '" style="top:0">' +
+    for (var i = 0; i < markers.length; i++) {
+      var mk = markers[i];
+      var tier = Math.min(mk.tier || (i + 1), 3);
+      html += '<div class="track-bus tier-' + tier + '" data-idx="' + i + '" style="top:0">' +
         '<span class="track-bus-icon">🚌</span>' +
-        '<span class="track-bus-tag">' + esc(busLabel(j)) + '</span>' +
+        (mk.label ? '<span class="track-bus-tag">' + esc(mk.label) + '</span>' : '') +
       '</div>';
     }
     elBuses.innerHTML = html;
   }
 
-  /* 計算每班車的位置；重疊時往下錯開，避免疊成一輛 */
-  function computePlacements(now) {
-    var keys = Object.keys(anchors).sort(function(a, b) { return a - b; });
-    var items = [];
-    for (var i = 0; i < keys.length; i++) {
-      var p = position(anchors[keys[i]], now);
-      if (p === null) continue;
-      items.push({ j: keys[i], p: p });
-    }
-    // 最前的班次先排；後面重疊的往下錯開
-    items.sort(function(a, b) { return b.p - a.p; });
-    var lastP = null;
-    var offset = 0;
-    for (var k = 0; k < items.length; k++) {
-      if (lastP !== null && Math.abs(items[k].p - lastP) < 0.6) {
-        offset += 15;
-      } else {
-        offset = 0;
-      }
-      items[k].off = offset;
-      items[k].y = yOf(items[k].p) + rowH / 2 - 16 + offset;
-      var A0 = anchors[items[k].j];
-      var loOfBus = Math.max(seqList[0] || 0, A0[0].seq - 1);
-      items[k].waiting = (now < A0[0].t) && (Math.abs(items[k].p - loOfBus) < 0.05);
-      lastP = items[k].p;
-    }
-    return items;
-  }
+  function paintMarkers(now) {
+    markers = buildMarkers(now);
+    // 若標記數量變動，重建 DOM
+    if (elBuses.children.length !== markers.length) renderMarkerEls();
 
-  function paintBuses(now) {
-    var items = computePlacements(now);
-    var firstY = null;
-    for (var i = 0; i < items.length; i++) {
-      var it = items[i];
-      var marker = elBuses.querySelector('.track-bus[data-j="' + it.j + '"]');
-      if (!marker) continue;
-      marker.style.display = '';
-      marker.style.transform = 'translate3d(0,' + it.y + 'px,0)';
-      marker.title = busLabel(it.j);
-      if (it.waiting) marker.classList.add('is-waiting');
-      else marker.classList.remove('is-waiting');
-      if (it.j === items[0].j) firstY = yOf(it.p);
+    var lastPos = null;
+    var offset = 0;
+    for (var i = 0; i < markers.length; i++) {
+      var mk = markers[i];
+      var el = elBuses.querySelector('.track-bus[data-idx="' + i + '"]');
+      if (!el) continue;
+      var tag = el.querySelector('.track-bus-tag');
+      if (tag) {
+        if (mk.label && tag.textContent !== mk.label) tag.textContent = mk.label;
+      } else if (mk.label) {
+        el.insertAdjacentHTML('beforeend', '<span class="track-bus-tag">' + esc(mk.label) + '</span>');
+      }
+      // 重疊錯開
+      if (lastPos !== null && Math.abs(mk.pos - lastPos) < 0.5) offset += 15;
+      else offset = 0;
+      lastPos = mk.pos;
+
+      var y = yOf(mk.pos) + rowH / 2 - 16 + offset;
+      el.style.transform = 'translate3d(0,' + y + 'px,0)';
+      el.title = mk.label;
+      if (mk.queued) el.classList.add('is-waiting');
+      else el.classList.remove('is-waiting');
+      mk.offset = offset;
     }
+
     if (elProgressLine) {
-      elProgressLine.style.height = (firstY === null ? 0 : Math.max(0, firstY + rowH / 2)) + 'px';
+      var front = markers.length ? markers[0].pos : seqList[0];
+      elProgressLine.style.height = Math.max(0, yOf(front) + rowH / 2) + 'px';
     }
     updateHero(now);
   }
@@ -306,14 +334,10 @@
     var now = Date.now();
     for (var i = 0; i < cells.length; i++) {
       var seq = parseInt(cells[i].getAttribute('data-eta-seq'), 10);
+      var list = etaMap[seq] || [];
       var txt = '';
-      var keys = Object.keys(anchors).sort(function(a, b) { return a - b; });
-      for (var k = 0; k < keys.length && k < 3; k++) {
-        var A = anchors[keys[k]];
-        var hit = null;
-        for (var m = 0; m < A.length; m++) { if (A[m].seq === seq) { hit = A[m]; break; } }
-        if (!hit) continue;
-        var mins = Math.round((hit.t - now) / 60000);
+      for (var k = 0; k < list.length && k < 3; k++) {
+        var mins = Math.round((list[k] - now) / 60000);
         if (mins < 0) continue;
         var cls = mins <= 0 ? 'red' : (mins <= 3 ? 'amber' : 'green');
         txt += '<span class="track-eta-val ' + cls + '">' + (mins <= 0 ? t('eta_lt_min') : mins + ' ' + t('eta_min')) + '</span>';
@@ -322,42 +346,16 @@
     }
   }
 
-  function animateBuses() {
-    paintBuses(Date.now());
-    rafId = requestAnimationFrame(animateBuses);
-  }
-
   function updateHero(now) {
-    var keys = Object.keys(anchors).sort(function(a, b) { return a - b; });
-    if (!keys.length) {
-      elHeroNum.textContent = '--';
-      elHeroLabel.textContent = t('track_no_eta');
-      elHeroSub.textContent = '';
-      return;
-    }
     var mySeq = (myStop && myStop.route === currentRoute) ? parseInt(myStop.seq, 10) : null;
-    if (mySeq === null) {
-      elHeroNum.textContent = '--';
-      elHeroLabel.textContent = t('track_tap_hint');
-      elHeroSub.textContent = (myStop && myStop.name) ? myStop.name : '';
-      // progress still meaningful: show bus1 progress
-      var pb = position(anchors[keys[0]], now);
-      if (pb !== null && elHeroProgress) {
-        var lastSeq = seqList[seqList.length - 1];
-        elHeroProgress.style.width = Math.max(0, Math.min(100, (pb / lastSeq) * 100)) + '%';
+
+    if (mySeq !== null && etaMap[mySeq] && etaMap[mySeq].length) {
+      var next = null;
+      for (var i = 0; i < etaMap[mySeq].length; i++) {
+        if (etaMap[mySeq][i] > now) { next = etaMap[mySeq][i]; break; }
       }
-      return;
-    }
-    var best = null;
-    for (var i = 0; i < keys.length; i++) {
-      var A = anchors[keys[i]];
-      for (var m = 0; m < A.length; m++) {
-        if (A[m].seq === mySeq && A[m].t > now) { best = { j: keys[i], t: A[m].t }; break; }
-      }
-      if (best) break;
-    }
-    if (best) {
-      var mins = Math.round((best.t - now) / 60000);
+      if (next === null) next = etaMap[mySeq][etaMap[mySeq].length - 1];
+      var mins = Math.round((next - now) / 60000);
       if (mins <= 0) {
         elHeroNum.textContent = t('track_soon');
         elHeroLabel.textContent = '';
@@ -366,15 +364,20 @@
         elHeroLabel.textContent = t('eta_min');
       }
       elHeroSub.textContent = (myStop.name || '') + ' · ' + t('track_my_stop');
-    } else {
-      elHeroNum.textContent = t('track_arrived');
-      elHeroLabel.textContent = '';
+    } else if (mySeq !== null) {
+      elHeroNum.textContent = '--';
+      elHeroLabel.textContent = t('track_no_eta');
       elHeroSub.textContent = (myStop.name || '') + ' · ' + t('track_my_stop');
+    } else {
+      elHeroNum.textContent = markers.length ? markers.length : '--';
+      elHeroLabel.textContent = markers.length ? t('track_current') : t('track_no_eta');
+      elHeroSub.textContent = t('track_tap_hint');
     }
-    var pb2 = position(anchors[keys[0]], now);
-    if (pb2 !== null && elHeroProgress) {
-      var lastSeq2 = seqList[seqList.length - 1];
-      elHeroProgress.style.width = Math.max(0, Math.min(100, (pb2 / lastSeq2) * 100)) + '%';
+
+    if (elHeroProgress) {
+      var front = markers.length ? markers[0].pos : seqList[0];
+      var lastSeq = seqList[seqList.length - 1] || 1;
+      elHeroProgress.style.width = Math.max(0, Math.min(100, (front / lastSeq) * 100)) + '%';
     }
   }
 
@@ -382,13 +385,15 @@
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
   }
 
+  function animate() {
+    paintMarkers(Date.now());
+    rafId = requestAnimationFrame(animate);
+  }
+
   function startAnimation() {
     stopAnimation();
-    if (reducedMotion) {
-      paintBuses(Date.now());
-      return;
-    }
-    rafId = requestAnimationFrame(animateBuses);
+    if (reducedMotion) { paintMarkers(Date.now()); return; }
+    rafId = requestAnimationFrame(animate);
   }
 
   /* ---------- fetch ---------- */
@@ -399,15 +404,15 @@
     fetch(API_BASE + encodeURIComponent(currentRoute) + '/1')
       .then(function(r) { return r.json(); })
       .then(function(d) {
-        anchors = buildAnchors((d && d.data) || []);
-        lastFetchAt = Date.now();
-        renderBuses();
+        etaMap = buildEtaMap((d && d.data) || []);
+        renderMarkerEls();
         renderStopEtas();
+        paintMarkers(Date.now());
         applyCollapse();
         startAnimation();
       })
       .catch(function() {
-        if (!Object.keys(anchors).length) {
+        if (!Object.keys(etaMap).length) {
           elHeroNum.textContent = '--';
           elHeroLabel.textContent = t('track_no_eta');
         }
@@ -421,7 +426,6 @@
     if (!stopsMinPromise) {
       stopsMinPromise = fetch('data/bus-stops-min.json')
         .then(function(r) { return r.json(); })
-        .then(function(d) { stopsMin = d; return d; })
         .catch(function() { return {}; });
     }
     return stopsMinPromise;
@@ -473,9 +477,8 @@
       if (elHeroSub) elHeroSub.textContent = t('track_loc_denied');
       return;
     }
-    if (elLocateBtn) elLocateBtn.disabled = true;
     var original = elLocateBtn ? elLocateBtn.innerHTML : '';
-    if (elLocateBtn) elLocateBtn.textContent = t('track_locating');
+    if (elLocateBtn) { elLocateBtn.disabled = true; elLocateBtn.textContent = t('track_locating'); }
     navigator.geolocation.getCurrentPosition(function(pos) {
       userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy };
       loadStopsMin().then(function(stops) {
@@ -487,8 +490,8 @@
           if (best.dist > 300 && elHeroSub) {
             elHeroSub.textContent = (best.name || '') + ' · ' + t('track_gps_accuracy', { n: Math.round(best.dist) });
           }
-        } else {
-          if (elHeroSub) elHeroSub.textContent = t('track_not_on_route', { n: Math.round(best.dist) });
+        } else if (elHeroSub) {
+          elHeroSub.textContent = t('track_not_on_route', { n: Math.round(best.dist) });
         }
       });
     }, function() {
@@ -508,7 +511,6 @@
 
   function renderRouteHeader() {
     var r0 = allRoutes.filter(function(r) { return r.route === currentRoute && r.bound === currentBound; })[0];
-    var r1 = allRoutes.filter(function(r) { return r.route === currentRoute && r.bound !== currentBound; })[0];
     if (!r0) return false;
 
     elRouteNum.textContent = currentRoute;
@@ -517,12 +519,13 @@
     elCompany.className = 'route-badge ' + (company === 'KMB' ? 'kmb' : 'lwb');
     elRouteDir.textContent = (r0.orig_tc || '') + ' → ' + (r0.dest_tc || '');
 
-    var html = '';
-    var opp = r0.bound === 'O' ? 'I' : 'O';
+    var opp = currentBound === 'O' ? 'I' : 'O';
     var oppData = allRoutes.filter(function(r) { return r.route === currentRoute && r.bound === opp; })[0];
-    html += '<button type="button" class="eta-dir-btn active" data-bound="' + esc(currentBound) + '">' + esc((r0.dest_tc ? '往 ' + r0.dest_tc : currentBound)) + '</button>';
+    var html = '<button type="button" class="eta-dir-btn active" data-bound="' + esc(currentBound) + '">' +
+      esc(r0.dest_tc ? '往 ' + r0.dest_tc : currentBound) + '</button>';
     if (oppData) {
-      html += '<button type="button" class="eta-dir-btn" data-bound="' + esc(opp) + '">' + esc((oppData.dest_tc ? '往 ' + oppData.dest_tc : opp)) + '</button>';
+      html += '<button type="button" class="eta-dir-btn" data-bound="' + esc(opp) + '">' +
+        esc(oppData.dest_tc ? '往 ' + oppData.dest_tc : opp) + '</button>';
     }
     elDirToggle.innerHTML = html;
     return true;
@@ -541,8 +544,9 @@
     seqList = nodes.map(function(n) { return n.seq; });
     rowH = computeRowH();
     showAll = false;
-    anchors = {};
-    busCount = 0;
+    etaMap = {};
+    markers = [];
+    elBuses.innerHTML = '';
 
     if (!renderRouteHeader()) {
       elLoading.hidden = true;
@@ -556,17 +560,17 @@
     elApp.hidden = false;
 
     renderRail();
-    renderBuses();
     applyCollapse();
     fetchEta();
 
     if (refreshTimer) clearInterval(refreshTimer);
     refreshTimer = setInterval(fetchEta, REFRESH_MS);
 
-    history.replaceState(null, '', 'track.html?route=' + encodeURIComponent(route) + '&bound=' + encodeURIComponent(currentBound));
+    try {
+      history.replaceState(null, '', 'track.html?route=' + encodeURIComponent(route) + '&bound=' + encodeURIComponent(currentBound));
+    } catch (e) {}
   }
 
-  // direction toggle (delegated)
   if (elDirToggle) {
     elDirToggle.addEventListener('click', function(e) {
       var btn = e.target.closest('.eta-dir-btn');
@@ -599,13 +603,14 @@
 
   document.addEventListener('visibilitychange', function() {
     if (document.hidden) stopAnimation();
-    else if (Object.keys(anchors).length) startAnimation();
+    else if (Object.keys(etaMap).length) startAnimation();
   });
 
   document.addEventListener('langchange', function() {
     updateCollapseBtn();
     renderStopEtas();
-    updateHero(Date.now());
+    renderMarkerEls();
+    paintMarkers(Date.now());
   });
 
   fetch('data/bus-routes-index.json')
