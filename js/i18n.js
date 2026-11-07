@@ -5,6 +5,7 @@ var LANG = (function() {
     'zh-Hant': {
       'lang_hant': '繁體', 'lang_hans': '簡體', 'lang_en': 'English',
       'nav_home': '首頁', 'nav_map': '地圖', 'nav_list': '列表', 'nav_routes': '路線', 'nav_eta': '即時到站', 'nav_bus_fav': '⭐ 常用', 'nav_plan': '規劃',
+      'tab_home': '首頁', 'tab_routes': '路線', 'tab_eta': '到站', 'tab_track': '追蹤', 'tab_more': '更多',
       'nav_more': '更多',
       'hero_title': '🚌 香港巴士便利站',
       'hero_subtitle': '一站式查閱巴士路線、地圖、即時到站時間',
@@ -146,6 +147,7 @@ var LANG = (function() {
     'zh-Hans': {
       'lang_hant': '繁體', 'lang_hans': '简体', 'lang_en': 'English',
       'nav_home': '首页', 'nav_map': '地图', 'nav_list': '列表', 'nav_routes': '路线', 'nav_eta': '即时到站', 'nav_bus_fav': '⭐ 常用', 'nav_plan': '规划',
+      'tab_home': '首页', 'tab_routes': '路线', 'tab_eta': '到站', 'tab_track': '追踪', 'tab_more': '更多',
       'nav_more': '更多',
       'hero_title': '🚌 香港巴士便利站',
       'hero_subtitle': '一站式查阅巴士路线、地图、即时到站时间',
@@ -287,6 +289,7 @@ var LANG = (function() {
     'en': {
       'lang_hant': '繁體', 'lang_hans': '简体', 'lang_en': 'English',
       'nav_home': 'Home', 'nav_map': 'Map', 'nav_list': 'List', 'nav_routes': 'Routes', 'nav_eta': 'Real-time', 'nav_bus_fav': '⭐ Favorites', 'nav_plan': 'Plan',
+      'tab_home': 'Home', 'tab_routes': 'Routes', 'tab_eta': 'ETA', 'tab_track': 'Track', 'tab_more': 'More',
       'nav_more': 'More',
       'hero_title': '🚌 HK Bus Guide',
       'hero_subtitle': 'Bus routes, stop map & real-time arrivals',

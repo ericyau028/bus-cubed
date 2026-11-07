@@ -92,9 +92,9 @@
 
         
 
-    <section class="reveal-up" style="padding: 16px 0 24px;">
-      <h3 style="font-size:1.1rem; margin-bottom:12px; color:var(--gray-700);">💡 巴士小貼士</h3>
-      <div style="display:flex;flex-direction:column;gap:8px;">
+        <details class="tips-acc">
+      <summary class="tips-acc-summary">💡 巴士小貼士</summary>
+      <div class="tips-acc-body">
         <div style="background:var(--white);border-radius:8px;padding:12px 16px;box-shadow:var(--shadow-sm);font-size:0.9rem;">
           <strong>🚌 查詢即時到站</strong> 搜尋路線編號（如 1A、968、E33），即可查看所有車站的預計到站時間
         </div>
@@ -105,7 +105,7 @@
           <strong>⭐ 常用路線</strong> 將常搭的路線加入書籤，快速查看到站時間
         </div>
       </div>
-    </section>
+    </details>
   
     <div class="ad-slot" style="text-align:center;">
       <ins class="adsbygoogle" style="display:block;min-height:100px;" data-ad-client="ca-pub-4900630860092971" data-ad-slot="6428216085" data-ad-format="rectangle" data-full-width-responsive="true"></ins>
@@ -138,5 +138,76 @@
     });
   }
 </script>
+  <nav class="tabbar" aria-label="主要導航">
+    <a href="index.html" class="tabbar-item" data-tab="home">
+      <span class="tabbar-icon" aria-hidden="true">&#127968;</span>
+      <span class="tabbar-label" data-i18n="tab_home">首頁</span>
+    </a>
+    <a href="routes.html" class="tabbar-item" data-tab="routes">
+      <span class="tabbar-icon" aria-hidden="true">&#128652;</span>
+      <span class="tabbar-label" data-i18n="tab_routes">路線</span>
+    </a>
+    <a href="eta.html" class="tabbar-item" data-tab="eta">
+      <span class="tabbar-icon" aria-hidden="true">&#9201;</span>
+      <span class="tabbar-label" data-i18n="tab_eta">到站</span>
+    </a>
+    <a href="track.html" class="tabbar-item" data-tab="track">
+      <span class="tabbar-icon" aria-hidden="true">&#128653;</span>
+      <span class="tabbar-label" data-i18n="tab_track">追蹤</span>
+    </a>
+    <button type="button" class="tabbar-item" id="tabbar-more" data-tab="more"
+            aria-expanded="false" aria-controls="tabbar-sheet">
+      <span class="tabbar-icon" aria-hidden="true">&#8943;</span>
+      <span class="tabbar-label" data-i18n="tab_more">更多</span>
+    </button>
+  </nav>
+
+  <div class="tabbar-sheet" id="tabbar-sheet" role="dialog" aria-modal="true" aria-label="更多功能" hidden>
+    <a href="map.html">&#128506; <span data-i18n="nav_map">地圖</span></a>
+    <a href="list.html">&#128203; <span data-i18n="nav_list">列表</span></a>
+    <a href="plan.html">&#129517; <span data-i18n="nav_plan">規劃</span></a>
+    <a href="fav.html">&#11088; <span data-i18n="nav_bus_fav">常用</span></a>
+    <div class="tabbar-lang">
+      <a href="#" data-lang="zh-Hant">繁體</a>
+      <a href="#" data-lang="zh-Hans">簡體</a>
+      <a href="#" data-lang="en">English</a>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    var page = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+    var map = { 'index.html': 'home', 'routes.html': 'routes', 'eta.html': 'eta', 'track.html': 'track' };
+    var current = map[page] || 'more';
+    document.body.classList.add('has-tabbar');
+
+    var items = document.querySelectorAll('.tabbar-item');
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].getAttribute('data-tab') === current) items[i].setAttribute('aria-current', 'page');
+    }
+
+    var moreBtn = document.getElementById('tabbar-more');
+    var sheet = document.getElementById('tabbar-sheet');
+    if (!moreBtn || !sheet) return;
+
+    function closeSheet() {
+      sheet.hidden = true;
+      moreBtn.setAttribute('aria-expanded', 'false');
+    }
+    moreBtn.addEventListener('click', function () {
+      var open = sheet.hidden;
+      sheet.hidden = !open;
+      moreBtn.setAttribute('aria-expanded', String(open));
+      if (open) { var f = sheet.querySelector('a'); if (f) f.focus(); }
+    });
+    document.addEventListener('click', function (e) {
+      if (!sheet.hidden && !sheet.contains(e.target) && !moreBtn.contains(e.target)) closeSheet();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { closeSheet(); moreBtn.focus(); }
+    });
+  })();
+  </script>
+
 </body>
 </html>

@@ -29,7 +29,7 @@
   var currentBound = 'O';
   var nodes = [];
   var seqList = [];
-  var rowH = 56;
+  var rowH = 52;
   var etaMap = {};       // seq -> [ts, ts, ts]（升冪）
   var markers = [];      // [{ pos, remain, queued, label }]
   var myStop = null;
@@ -71,7 +71,7 @@
   }
 
   function computeRowH() {
-    return window.innerWidth >= 640 ? 64 : 56;
+    return window.innerWidth >= 640 ? 60 : 52;
   }
 
   /* ---------- data ---------- */

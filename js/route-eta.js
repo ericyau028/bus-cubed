@@ -45,6 +45,32 @@
     });
   }
 
+  function collapseRows(list) {
+    if (list.dataset.collapsible === '1') return;
+    var rows = list.querySelectorAll('.route-eta-row');
+    var limit = 6;
+    if (rows.length <= limit) return;
+    list.dataset.collapsible = '1';
+    for (var i = limit; i < rows.length; i++) rows[i].classList.add('eta-row-hidden');
+    var total = rows.length;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'route-eta-more';
+    var open = false;
+    function label() {
+      btn.textContent = open
+        ? (window.LANG && LANG.t ? LANG.t('route_collapse') : '收起')
+        : (window.LANG && LANG.t ? LANG.t('track_show_all', { n: total }) : '顯示全部 ' + total + ' 站');
+    }
+    label();
+    btn.addEventListener('click', function() {
+      open = !open;
+      for (var j = limit; j < rows.length; j++) rows[j].classList.toggle('eta-row-hidden', !open);
+      label();
+    });
+    list.appendChild(btn);
+  }
+
   function loadWidget(widget) {
     var route = widget.getAttribute('data-route');
     var bound = widget.getAttribute('data-bound') || 'O';
@@ -76,6 +102,7 @@
         }
         list.innerHTML = stopsHtml;
         render(widget, bound, allEta);
+        collapseRows(list);
       })
       .catch(function() {
         list.innerHTML = '<div class="route-eta-error">⚠️ 無法取得到站時間，請稍後重試。</div>';

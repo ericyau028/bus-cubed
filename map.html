@@ -10,7 +10,6 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
@@ -137,8 +136,8 @@
 
     function initMap(lat, lng) {
       map = L.map('map', { zoomControl: false }).setView([lat, lng], 17);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> | <a href="https://carto.com/">CARTO</a>'
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(map);
 
       var userIcon = L.divIcon({ html: '<div class="user-location"></div>', className: '', iconSize: [20, 20], iconAnchor: [10, 10] });
@@ -284,5 +283,108 @@
     });
   }
 </script>
+  <nav class="tabbar" aria-label="主要導航">
+    <a href="index.html" class="tabbar-item" data-tab="home">
+      <span class="tabbar-icon" aria-hidden="true">&#127968;</span>
+      <span class="tabbar-label" data-i18n="tab_home">首頁</span>
+    </a>
+    <a href="routes.html" class="tabbar-item" data-tab="routes">
+      <span class="tabbar-icon" aria-hidden="true">&#128652;</span>
+      <span class="tabbar-label" data-i18n="tab_routes">路線</span>
+    </a>
+    <a href="eta.html" class="tabbar-item" data-tab="eta">
+      <span class="tabbar-icon" aria-hidden="true">&#9201;</span>
+      <span class="tabbar-label" data-i18n="tab_eta">到站</span>
+    </a>
+    <a href="track.html" class="tabbar-item" data-tab="track">
+      <span class="tabbar-icon" aria-hidden="true">&#128653;</span>
+      <span class="tabbar-label" data-i18n="tab_track">追蹤</span>
+    </a>
+    <button type="button" class="tabbar-item" id="tabbar-more" data-tab="more"
+            aria-expanded="false" aria-controls="tabbar-sheet">
+      <span class="tabbar-icon" aria-hidden="true">&#8943;</span>
+      <span class="tabbar-label" data-i18n="tab_more">更多</span>
+    </button>
+  </nav>
+
+  <div class="tabbar-sheet" id="tabbar-sheet" role="dialog" aria-modal="true" aria-label="更多功能" hidden>
+    <a href="map.html">&#128506; <span data-i18n="nav_map">地圖</span></a>
+    <a href="list.html">&#128203; <span data-i18n="nav_list">列表</span></a>
+    <a href="plan.html">&#129517; <span data-i18n="nav_plan">規劃</span></a>
+    <a href="fav.html">&#11088; <span data-i18n="nav_bus_fav">常用</span></a>
+    <div class="tabbar-lang">
+      <a href="#" data-lang="zh-Hant">繁體</a>
+      <a href="#" data-lang="zh-Hans">簡體</a>
+      <a href="#" data-lang="en">English</a>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    var page = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+    var map = { 'index.html': 'home', 'routes.html': 'routes', 'eta.html': 'eta', 'track.html': 'track' };
+    var current = map[page] || 'more';
+    document.body.classList.add('has-tabbar');
+
+    var items = document.querySelectorAll('.tabbar-item');
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].getAttribute('data-tab') === current) items[i].setAttribute('aria-current', 'page');
+    }
+
+    var moreBtn = document.getElementById('tabbar-more');
+    var sheet = document.getElementById('tabbar-sheet');
+    if (!moreBtn || !sheet) return;
+
+    function closeSheet() {
+      sheet.hidden = true;
+      moreBtn.setAttribute('aria-expanded', 'false');
+    }
+    moreBtn.addEventListener('click', function () {
+      var open = sheet.hidden;
+      sheet.hidden = !open;
+      moreBtn.setAttribute('aria-expanded', String(open));
+      if (open) { var f = sheet.querySelector('a'); if (f) f.focus(); }
+    });
+    document.addEventListener('click', function (e) {
+      if (!sheet.hidden && !sheet.contains(e.target) && !moreBtn.contains(e.target)) closeSheet();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { closeSheet(); moreBtn.focus(); }
+    });
+  })();
+  </script>
+
+  <script>
+  (function () {
+    function fitMapLayout() {
+      var nav = document.querySelector('nav');
+      var hdr = document.querySelector('.page-header');
+      var top = (nav ? nav.getBoundingClientRect().height : 0) + (hdr ? hdr.getBoundingClientRect().height : 0);
+      var map = document.getElementById('map');
+      if (map) map.style.top = Math.round(top) + 'px';
+
+      var tab = document.querySelector('.tabbar');
+      var th = (tab && getComputedStyle(tab).display !== 'none') ? tab.getBoundingClientRect().height : 0;
+
+      var np = document.getElementById('nearby-panel');
+      if (np) np.style.bottom = Math.round(th) + 'px';
+
+      var lb = document.querySelector('.locate-btn');
+      if (lb) {
+        var npH = np ? np.getBoundingClientRect().height : 0;
+        lb.style.bottom = Math.round(th + npH + 16) + 'px';
+      }
+      if (window.map && map && map.offsetHeight) {
+        window.map.invalidateSize();
+      }
+    }
+    window.addEventListener('load', fitMapLayout);
+    window.addEventListener('resize', fitMapLayout);
+    setTimeout(fitMapLayout, 200);
+    setTimeout(fitMapLayout, 900);
+    document.addEventListener('langchange', fitMapLayout);
+  })();
+  </script>
+
 </body>
 </html>
