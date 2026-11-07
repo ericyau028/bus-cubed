@@ -2647,3 +2647,50 @@ details.route-acc > .source-note { padding: 10px 14px 14px; }
   body.has-tabbar .locate-btn { bottom: calc(var(--tabbar-h) + 16px + env(safe-area-inset-bottom)); }
   body.has-tabbar #nearby-panel { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
 }
+
+/* ============================================================
+   P3 fixes: overflow + tap targets + font floor
+   ============================================================ */
+@media (max-width: 639px) {
+  /* index overflow: `.box-net-6 > :nth-child(n)` has higher specificity
+     than `body .box-net-6 > *`, forcing cards into columns 2-4 of a 2-col grid */
+  body .box-net-6 > :nth-child(n) {
+    grid-column: auto !important;
+    grid-row: auto !important;
+  }
+  body .box-net-6 > * { min-width: 0; }
+
+  /* tap targets: expand hit area without changing layout */
+  body .nav-brand { position: relative; }
+  body .nav-brand::after {
+    content: "";
+    position: absolute;
+    inset: -9px -4px;
+  }
+  body .breadcrumb a { position: relative; }
+  body .breadcrumb a::after {
+    content: "";
+    position: absolute;
+    inset: -12px -3px;
+  }
+  body .source-note a,
+  body footer a { position: relative; }
+
+  /* segmented switcher to 44px */
+  body .eta-seg-item { min-height: 44px; }
+
+  /* tracker bus labels must not fall below 12px */
+  body .track-bus.tier-2 .track-bus-tag,
+  body .track-bus.tier-3 .track-bus-tag {
+    font-size: 12px !important;
+    padding: 1px 4px;
+  }
+
+  /* route page CTA links rendered with inline styles */
+  body main a[style*="background:#2563eb"] {
+    min-height: 44px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
