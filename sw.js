@@ -4,7 +4,7 @@
  *  - 資料檔 (data/*.json)：Network First（有網路即更新，離線用快取）
  *  - 外部 API：僅網路（不快取動態數據）
  */
-const CACHE_NAME = 'bus-cubed-v3';
+const CACHE_NAME = 'bus-cubed-v4';
 const STATIC_ASSETS = [
   './',
   './index.html',
