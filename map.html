@@ -134,6 +134,11 @@
     var loading = document.getElementById('loading');
     var searchInstance = null;
 
+    /* safe i18n accessor: geolocation callbacks can fire before i18n.js (defer) loads */
+    function T(key, vars) {
+      return (window.LANG && LANG.t) ? LANG.t(key, vars) : key;
+    }
+
     function initMap(lat, lng) {
       map = L.map('map', { zoomControl: false }).setView([lat, lng], 17);
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -141,7 +146,7 @@
       }).addTo(map);
 
       var userIcon = L.divIcon({ html: '<div class="user-location"></div>', className: '', iconSize: [20, 20], iconAnchor: [10, 10] });
-      userMarker = L.marker([lat, lng], { icon: userIcon, zIndexOffset: 1000 }).addTo(map).bindPopup(LANG.t('your_location'));
+      userMarker = L.marker([lat, lng], { icon: userIcon, zIndexOffset: 1000 }).addTo(map).bindPopup(T('your_location'));
 
       fetch('data/bus-stops-index.json').then(function(r) { return r.json(); }).then(function(data) {
         stopData = [];
@@ -159,7 +164,7 @@
           container: '#search-container',
           data: filteredData,
           fields: ['name_tc', 'name_en', 'id', 'routes'],
-          placeholder: LANG.t('search_placeholder'),
+          placeholder: T('search_placeholder'),
           onFilter: function(fd) {
             filteredData = fd;
             renderMarkers();
@@ -188,7 +193,7 @@
           '<div class="popup-name">' + (s.name_tc || '巴士站') + '</div>' +
           '<div class="popup-addr">' + (s.name_en || '') + '</div>' +
           routesHtml +
-          '<a class="popup-nav" href="https://www.google.com/maps/dir/?api=1&destination=' + s.lat + ',' + s.lng + '" target="_blank">' + LANG.t('google_nav') + '</a>'
+          '<a class="popup-nav" href="https://www.google.com/maps/dir/?api=1&destination=' + s.lat + ',' + s.lng + '" target="_blank">' + T('google_nav') + '</a>'
         );
         mcg.addLayer(marker);
       });
@@ -208,14 +213,14 @@
         return { item: s, dist: haversine(lat, lng, s.lat, s.lng) };
       }).sort(function(a, b) { return a.dist - b.dist; });
 
-      var html = '<div style="font-weight:700;font-size:14px;margin-bottom:5px;">' + LANG.t('nearby_title') + '</div>';
+      var html = '<div style="font-weight:700;font-size:14px;margin-bottom:5px;">' + T('nearby_title') + '</div>';
       withDist.slice(0, 5).forEach(function(d, i) {
         var meters = Math.round(d.dist);
         var walkMin = Math.round(d.dist / 80);
         html += '<div class="nearby-item" onclick="window.open(\'https://www.google.com/maps/dir/?api=1&destination=' + d.item.lat + ',' + d.item.lng + '\', \'_blank\')">';
         html += '<div class="num">' + (i+1) + '</div>';
         html += '<div class="info"><div class="name">' + (d.item.name_tc || '巴士站') + '</div><div class="dist">' + meters + 'm（步行約 ' + walkMin + ' 分鐘）</div></div>';
-        html += '<button class="nav-btn" onclick="event.stopPropagation();window.open(\'https://www.google.com/maps/dir/?api=1&destination=' + d.item.lat + ',' + d.item.lng + '\', \'_blank\')">' + LANG.t('navigate') + '</button>';
+        html += '<button class="nav-btn" onclick="event.stopPropagation();window.open(\'https://www.google.com/maps/dir/?api=1&destination=' + d.item.lat + ',' + d.item.lng + '\', \'_blank\')">' + T('navigate') + '</button>';
         html += '</div>';
       });
       nearbyPanel.innerHTML = html;
@@ -237,7 +242,7 @@
     } else { fallbackLocation(); }
 
     function fallbackLocation() {
-      loading.innerHTML = '<div class="spinner"></div><span>' + LANG.t('loading_ip') + '</span>';
+      loading.innerHTML = '<div class="spinner"></div><span>' + T('loading_ip') + '</span>';
       var xhr = new XMLHttpRequest();
       xhr.open('GET', 'https://ipapi.co/json/', true);
       xhr.timeout = 5000;
@@ -257,7 +262,7 @@
     }
 
     function showDistrictPicker() {
-      loading.innerHTML = '<div style="text-align:center;padding:20px;"><div style="font-size:48px;margin-bottom:10px;">📍</div><div style="font-size:16px;margin-bottom:15px;">' + LANG.t('location_fail') + '<br>' + LANG.t('location_select') + '</div><div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;">' +
+      loading.innerHTML = '<div style="text-align:center;padding:20px;"><div style="font-size:48px;margin-bottom:10px;">📍</div><div style="font-size:16px;margin-bottom:15px;">' + T('location_fail') + '<br>' + T('location_select') + '</div><div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;">' +
         ['尖沙咀',22.3193,114.1694,'中環',22.2820,114.1580,'旺角',22.3196,114.1702,'銅鑼灣',22.2800,114.1830,'灣仔',22.2760,114.1730,'佐敦',22.3040,114.1710,'深水埗',22.3320,114.1620,'沙田',22.3810,114.1880].reduce(function(a,_,i,arr) {
           if (i%3===0) a.push('<button onclick="initMap('+arr[i+1]+','+arr[i+2]+')" style="padding:10px 18px;border:1px solid #ddd;border-radius:8px;background:#fff;font-size:14px;cursor:pointer;">'+arr[i]+'</button>'); return a;
         }, []).join('') + '</div></div>';
